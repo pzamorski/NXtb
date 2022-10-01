@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.mycompany.nxtb</groupId>
+    <artifactId>NXtb</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <exec.mainClass>com.mycompany.nxtb.NXtb</exec.mainClass>
+    </properties>
+    
+    <!-- include below build tag to your existing pom.xml  --> 
+<build>
+ <plugins>
+     <plugin> 
+
+                <!-- Building an executable jar -->
+
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                  <archive>
+                    <manifest>
+
+                    <!-- give full qualified name of your main class-->
+                      <mainClass>com.mycompany.nxtb.NXtb</mainClass>
+<addClasspath>true</addClasspath>
+
+                    </manifest>
+                  </archive>
+                </configuration>
+    </plugin>
+ </plugins>
+</build>
+    
+        <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+    
+    
+    
+    
+    
+    
+    <dependencies>
+                <dependency>
+            <groupId>com.github.neuroph</groupId>
+            <artifactId>Neuroph</artifactId>
+            <version>2.98</version>
+            <type>pom</type>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.github.neuroph</groupId>
+            <artifactId>neuroph-core</artifactId>
+            <version>2.98</version>
+            <type>jar</type>
+        </dependency>
+        
+                <dependency>
+    <groupId>com.github.Azbesciak</groupId>
+    <artifactId>xAPIJavaWrapper</artifactId>
+    <version>2.5.0</version>
+</dependency>
+        
+             <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        
+    </dependencies>
+    
+</project>
