@@ -34,7 +34,8 @@ public class NetworkNeural {
     private int numberInput;
     private int numberOutput;
     private final int MaxIterations = 120000000;
-    private final double LearningRate = 10;
+    private final double LearningRate = 15;
+            ;
     private final double MaxError = 0.001;
     private DataSet dataSet;
     private int BackUpInterval = 15000;

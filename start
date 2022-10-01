@@ -1,0 +1,2 @@
+source /etc/profile.d/custom-ubaid-maven.sh
+mvn clean compile exec:java 
