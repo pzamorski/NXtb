@@ -1,2 +1,2 @@
 source /etc/profile.d/custom-ubaid-maven.sh
-mvn clean compile exec:java 
+mvn clean compile exec:java >> log.txt &
