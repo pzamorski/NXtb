@@ -23,6 +23,8 @@ import org.neuroph.core.events.LearningEvent;
 import org.neuroph.core.events.LearningEventListener;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.BackPropagation;
+import org.neuroph.nnet.learning.MomentumBackpropagation;
+
 
 /**
  *
@@ -42,6 +44,7 @@ public class NetworkNeural {
     private int sprawnosc = 0;
 
     private MultiLayerPerceptron network;
+    
 
     public void setBackUpInterval(int BackUpInterval) {
         this.BackUpInterval = BackUpInterval;
@@ -55,22 +58,30 @@ public class NetworkNeural {
     }
 
     public void setLayer(int L1, int L2) {
+        
         // create MultiLayerPerceptron neural network
         network = new MultiLayerPerceptron(numberInput, 50, numberOutput);
 
+     
         // create training set from file
         dataSet = DataSet.createFromFile(inputFileName, numberInput, numberOutput, "\t");
         // train the network with training set
-        network.getLearningRule().addListener(new LearningListener());
+        
 
-        network.getLearningRule().setLearningRate(LearningRate);
+        
+        network.setLearningRule(new MomentumBackpropagation());
+        network.getLearningRule().addListener(new LearningListener());
+        
+      network.getLearningRule().setLearningRate(LearningRate);
         network.getLearningRule().setMaxError(MaxError);
+        network.getLearningRule().setMaxIterations(MaxIterations);
 
         network.save("data.nnet");
 
     }
 
     public void saveWeight() throws IOException {
+        System.out.println("Save Weights");
         FileWriter myWriter = new FileWriter("data/" + fileNameWeight + "_Weights.txt");
         Double[] weight = network.getWeights();
 
@@ -216,18 +227,19 @@ public class NetworkNeural {
         @Override
         public void handleLearningEvent(LearningEvent event) {
 
-            BackPropagation bp = (BackPropagation) event.getSource();
+            MomentumBackpropagation bp = (MomentumBackpropagation) event.getSource();
+            
 
             if ((bp.getCurrentIteration()-1 % BackUpInterval) == 0) {
                 
                 System.out.println("Błąd: " + bp.getTotalNetworkError());
-                try {
-                    System.out.print("Backup...");
-                    saveWeight();
-                    System.out.println("ok");
-                } catch (IOException ex) {
-                    Logger.getLogger(NetworkNeural.class.getName()).log(Level.SEVERE, null, ex);
-                }
+//                try {
+//                    System.out.print("Backup...");
+//                    saveWeight();
+//                    System.out.println("ok");
+//                } catch (IOException ex) {
+//                    Logger.getLogger(NetworkNeural.class.getName()).log(Level.SEVERE, null, ex);
+//                }
             }
         }
 

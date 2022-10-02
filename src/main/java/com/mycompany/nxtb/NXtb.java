@@ -21,13 +21,13 @@ public class NXtb {
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
 
         String symbol = "KGH.PL";
-        int beckumInterval = 2000;
+        int Interval = 12000;
         XtbApi xtbApi;
         NetworkNeural nn = new NetworkNeural();
 
         nn.setFileToTraining(3, 1, symbol);
         nn.setLayer(100, 40);
-        nn.setBackUpInterval(beckumInterval);
+        nn.setBackUpInterval(Interval);
 
         Scanner in = new Scanner(System.in);
         while (true) {
@@ -42,17 +42,17 @@ public class NXtb {
             System.out.println("exit");
             System.out.print(">>");
 
-            
-                                System.out.println("Start");
-                    //nn.startLern(1);
-
-                    nn.loadWeight();
-                    nn.setInterval(beckumInterval);
-                    while (nn.testNeuralNetwork() < 100) {
-
-                        nn.startLern();
-                    }
-                    System.out.println("Siec wytrenowana");
+//            
+//                                System.out.println("Start");
+//                    //nn.startLern(1);
+//
+//                    nn.loadWeight();
+//                    nn.setInterval(Interval);
+//                    while (nn.testNeuralNetwork() < 100) {
+//
+//                        nn.startLern();
+//                    }
+//                    System.out.println("Siec wytrenowana");
             
             
             switch (in.nextLine()) {
@@ -78,10 +78,11 @@ public class NXtb {
                     //nn.startLern(1);
 
                     nn.loadWeight();
-                    nn.setInterval(beckumInterval);
+                    nn.setInterval(Interval);
                     while (nn.testNeuralNetwork() < 100) {
 
                         nn.startLern();
+                        nn.saveWeight();
                     }
                     System.out.println("Siec wytrenowana");
                     break;
