@@ -21,7 +21,7 @@ public class NXtb {
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
 
         String symbol = "KGH.PL";
-        int beckumInterval = 20000;
+        int beckumInterval = 2000;
         XtbApi xtbApi;
         NetworkNeural nn = new NetworkNeural();
 
@@ -42,7 +42,8 @@ public class NXtb {
             System.out.println("exit");
             System.out.print(">>");
 
-                              System.out.println("Start");
+            
+                                System.out.println("Start");
                     //nn.startLern(1);
 
                     nn.loadWeight();
@@ -51,9 +52,10 @@ public class NXtb {
 
                         nn.startLern();
                     }
+                    System.out.println("Siec wytrenowana");
             
             
-            switch  (in.nextLine()) {
+            switch (in.nextLine()) {
                 case "get":
                     xtbApi = new XtbApi();
                     xtbApi.login();

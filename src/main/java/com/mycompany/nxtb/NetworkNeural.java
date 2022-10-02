@@ -33,9 +33,8 @@ public class NetworkNeural {
     private String inputFileName;
     private int numberInput;
     private int numberOutput;
-    private final int MaxIterations = 120000000;
-    private final double LearningRate = 15;
-            ;
+    private final int MaxIterations = 120000;
+    private final double LearningRate = 0.03;
     private final double MaxError = 0.001;
     private DataSet dataSet;
     private int BackUpInterval = 15000;
