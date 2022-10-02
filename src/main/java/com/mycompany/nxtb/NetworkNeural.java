@@ -23,6 +23,7 @@ import org.neuroph.core.events.LearningEvent;
 import org.neuroph.core.events.LearningEventListener;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.BackPropagation;
+import org.neuroph.nnet.learning.DynamicBackPropagation;
 import org.neuroph.nnet.learning.MomentumBackpropagation;
 
 
@@ -60,7 +61,7 @@ public class NetworkNeural {
     public void setLayer(int L1, int L2) {
         
         // create MultiLayerPerceptron neural network
-        network = new MultiLayerPerceptron(numberInput, 50, numberOutput);
+        network = new MultiLayerPerceptron(numberInput, L1, numberOutput);
 
      
         // create training set from file
@@ -69,9 +70,9 @@ public class NetworkNeural {
         
 
         
-        network.setLearningRule(new MomentumBackpropagation());
+        network.setLearningRule(new DynamicBackPropagation());
         network.getLearningRule().addListener(new LearningListener());
-        
+    
       network.getLearningRule().setLearningRate(LearningRate);
         network.getLearningRule().setMaxError(MaxError);
         network.getLearningRule().setMaxIterations(MaxIterations);
@@ -227,10 +228,10 @@ public class NetworkNeural {
         @Override
         public void handleLearningEvent(LearningEvent event) {
 
-            MomentumBackpropagation bp = (MomentumBackpropagation) event.getSource();
+            DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
             
 
-            if ((bp.getCurrentIteration()-1 % BackUpInterval) == 0) {
+            if ((bp.getCurrentIteration()-1 % (BackUpInterval)) == 0) {
                 
                 System.out.println("Błąd: " + bp.getTotalNetworkError());
 //                try {
