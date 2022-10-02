@@ -42,17 +42,17 @@ public class NXtb {
             System.out.println("exit");
             System.out.print(">>");
 
-//            
-//                                System.out.println("Start");
-//                    //nn.startLern(1);
-//
-//                    nn.loadWeight();
-//                    nn.setInterval(Interval);
-//                    while (nn.testNeuralNetwork() < 100) {
-//
-//                        nn.startLern();
-//                    }
-//                    System.out.println("Siec wytrenowana");
+            
+                                System.out.println("Start");
+                    //nn.startLern(1);
+
+                    nn.loadWeight();
+                    nn.setInterval(Interval);
+                    while (nn.testNeuralNetwork() < 100) {
+
+                        nn.startLern();
+                    }
+                    System.out.println("Siec wytrenowana");
             
             
             switch (in.nextLine()) {
