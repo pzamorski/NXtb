@@ -53,7 +53,7 @@ public class NXtb {
                     }
             
             
-            switch (in.nextLine()) {
+            switch  (in.nextLine()) {
                 case "get":
                     xtbApi = new XtbApi();
                     xtbApi.login();
