@@ -21,12 +21,12 @@ public class NXtb {
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
 
         String symbol = "KGH.PL";
-        int Interval = 5000;
+        int Interval = 20000;
         XtbApi xtbApi;
         NetworkNeural nn = new NetworkNeural();
 
-        nn.setFileToTraining(3, 1, symbol);
-        nn.setLayer(100, 10);
+        nn.setFileToTraining(4, 1, symbol);
+        nn.setLayer(10, 10);
         nn.setBackUpInterval(Interval);
 
         Scanner in = new Scanner(System.in);
@@ -42,24 +42,24 @@ public class NXtb {
             System.out.println("exit");
             System.out.print(">>");
 
-            
-                                System.out.println("Start");
-                    //nn.startLern(1);
-
-                    nn.loadWeight();
-                    nn.setInterval(Interval);
-                    while (nn.testNeuralNetwork() < 100) {
-
-                        nn.startLern();
-                    }
-                    System.out.println("Siec wytrenowana");
+//            
+//                                System.out.println("Start");
+//                    //nn.startLern(1);
+//
+//                    nn.loadWeight();
+//                    nn.setInterval(Interval);
+//                    while (nn.testNeuralNetwork() < 100) {
+//
+//                        nn.startLern();
+//                    }
+//                    System.out.println("Siec wytrenowana");
             
             
             switch (in.nextLine()) {
                 case "get":
                     xtbApi = new XtbApi();
                     xtbApi.login();
-                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 40390000000L);
+                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 20390000000L);
                     xtbApi.logout();
                     break;
                 case "lern":
@@ -82,7 +82,7 @@ public class NXtb {
                     while (nn.testNeuralNetwork() < 100) {
 
                         nn.startLern();
-                        nn.saveWeight();
+                        //nn.saveWeight();
                     }
                     System.out.println("Siec wytrenowana");
                     break;

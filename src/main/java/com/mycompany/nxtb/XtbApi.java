@@ -182,6 +182,12 @@ public class XtbApi {
 //                            String priceLow1234 = String.valueOf(dpriceLow1234 / 100);
 //                            String volumen1234 = String.valueOf(dvolumen1234);
 //                            String pipsCO1234 = String.valueOf(dPipsCO1234);
+
+ String result1 = "1";
+                            if (dPipsCO <= 0) {
+                                result1 = "0";
+                            }
+                            
                             String result = "1";
                             if (dPipsCO1 <= 0) {
                                 result = "0";
@@ -190,7 +196,7 @@ public class XtbApi {
                             //String ctm = String.valueOf(RateInfoRecord.get(i).getCtm());
                             try {
 
-                                myWriter.write(priceClose + separator + priceHigh + separator + priceLow + separator +
+                                myWriter.write(priceClose + separator + priceHigh + separator + priceLow + separator + result1 + separator +
 //                                        priceClose1 + separator + priceHigh1 + separator + priceLow1 + separator +
 //                                        priceClose12 + separator + priceHigh12 + separator + priceLow12 + separator +
 //                                        priceClose123 + separator + priceHigh123 + separator + priceLow123 + separator +
