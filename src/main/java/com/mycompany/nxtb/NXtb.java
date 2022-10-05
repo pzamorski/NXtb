@@ -28,10 +28,12 @@ public class NXtb {
         nn.setFileToTraining(4, 1, symbol);
         nn.setLayer(10, 10);
         nn.setBackUpInterval(Interval);
-
+        String commend = null;
         Scanner in = new Scanner(System.in);
-        while (true) {
 
+        if (args[0] == null) {
+            commend = "lern2";
+        } else {
             System.out.println("get-Pobierz swieczki");
             System.out.println("lern-Trening sieci");
             System.out.println("lern2-Trening sieci + test");
@@ -41,17 +43,22 @@ public class NXtb {
             System.out.println("load-Załadowanie wag");
             System.out.println("exit");
             System.out.print(">>");
-
-                    nn.loadWeight();
-                    nn.setInterval(Interval);
-                    while (nn.testNeuralNetwork() < 100) {
-
-                        nn.startLern();
-                        //nn.saveWeight();
-                    }
             
+            commend = in.nextLine();
+        }
+
+        while (true) {
+
             
-            switch (in.nextLine()) {
+
+//                    nn.loadWeight();
+//                    nn.setInterval(Interval);
+//                    while (nn.testNeuralNetwork() < 100) {
+//
+//                        nn.startLern();
+//                        //nn.saveWeight();
+//                    }
+            switch (commend) {
                 case "get":
                     xtbApi = new XtbApi();
                     xtbApi.login();

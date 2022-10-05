@@ -61,7 +61,7 @@ public class NetworkNeural {
     public void setLayer(int L1, int L2) {
         
         // create MultiLayerPerceptron neural network
-        network = new MultiLayerPerceptron(numberInput, 1000, numberOutput);
+        network = new MultiLayerPerceptron(numberInput, 900, numberOutput);
 
      
         // create training set from file
@@ -71,8 +71,8 @@ public class NetworkNeural {
 
         DynamicBackPropagation db = new DynamicBackPropagation();
         
-        db.setMomentumChange(1000000);
-        db.setMaxMomentum(1000000);
+        db.setMomentumChange(100000);
+        db.setMaxMomentum(100000);
         network.setLearningRule(db);
         network.getLearningRule().addListener(new LearningListener());
     
