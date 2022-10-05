@@ -36,8 +36,8 @@ public class NetworkNeural {
     private String inputFileName;
     private int numberInput;
     private int numberOutput;
-    private final int MaxIterations = 120000;
-    private final double LearningRate = 0.6;
+    private final int MaxIterations = 1200000;
+    private final double LearningRate = 0.9;
     private final double MaxError = 0.01;
     private DataSet dataSet;
     private int BackUpInterval = 15000;
@@ -61,7 +61,7 @@ public class NetworkNeural {
     public void setLayer(int L1, int L2) {
         
         // create MultiLayerPerceptron neural network
-        network = new MultiLayerPerceptron(numberInput, 60, numberOutput);
+        network = new MultiLayerPerceptron(numberInput, 1000, numberOutput);
 
      
         // create training set from file
@@ -71,8 +71,8 @@ public class NetworkNeural {
 
         DynamicBackPropagation db = new DynamicBackPropagation();
         
-        db.setMomentumChange(100000);
-        db.setMaxMomentum(1000);
+        db.setMomentumChange(1000000);
+        db.setMaxMomentum(1000000);
         network.setLearningRule(db);
         network.getLearningRule().addListener(new LearningListener());
     
@@ -147,10 +147,7 @@ public class NetworkNeural {
         for (int i = 0; i < 10; i++) {
 
             for (int y = 0; y != numberInput; y++) {
-                if (y % 3 == 0) {
-                    System.out.print("Podaj cene otwarcia: ");
-                    OpenPrice = Double.valueOf(in.nextLine());
-                }
+
                 System.out.print("Podaj wartość wejscia numer " + (y + 1) + ": ");
                 input[y] = OpenPrice - Double.valueOf(in.nextLine());
             }
