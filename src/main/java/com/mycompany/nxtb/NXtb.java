@@ -31,8 +31,8 @@ public class NXtb {
         String commend = null;
         Scanner in = new Scanner(System.in);
 
-        if (args[0] == null) {
-            commend = "lern2";
+        if (args[0] != null) {
+            commend = args[0];
         } else {
             System.out.println("get-Pobierz swieczki");
             System.out.println("lern-Trening sieci");
@@ -47,7 +47,6 @@ public class NXtb {
             commend = in.nextLine();
         }
 
-        while (true) {
 
             
 
@@ -107,7 +106,9 @@ public class NXtb {
                 default:
 
             }
-        }
+            System.exit(0);
+            
+        
         //xtbApi.getActualPrice();
 
     }
