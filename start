@@ -1,2 +1,2 @@
 source /etc/profile.d/custom-ubaid-maven.sh
-mvn clean compile exec:java -Dexec.args="lern2" >> log.txt &
+mvn clean compile exec:java -Dexec.args="$1" >> log.txt &
