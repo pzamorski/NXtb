@@ -25,14 +25,15 @@ public class NXtb {
         XtbApi xtbApi;
         NetworkNeural nn = new NetworkNeural();
 
-        nn.setFileToTraining(4, 1, symbol);
-        nn.setLayer(10, 10);
+        nn.setFileToTraining(3, 1, symbol);
+        nn.setLayer(100,10);
         nn.setBackUpInterval(Interval);
 
-        String commend = null;
+        String commend=null;
         Scanner in = new Scanner(System.in);
 
-        if (args[0] == null) {
+        
+        if (args.length == 0) {
 
             System.out.println("get-Pobierz swieczki");
             System.out.println("lern-Trening sieci");
@@ -44,18 +45,21 @@ public class NXtb {
             System.out.println("exit");
             System.out.print(">>");
 
-            args[0] = in.nextLine();
+            String[] execut = in.nextLine().split(" ");
+            args=new String[execut.length];
+            args=execut;
+   
         }
 
 
         for (int i = 0; i < args.length; i++) {
             commend = args[i];
-
+            
             switch (commend) {
                 case "get":
                     xtbApi = new XtbApi();
                     xtbApi.login();
-                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 20390000000L);
+                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 990000000L);
                     xtbApi.logout();
                     break;
                 case "lern":

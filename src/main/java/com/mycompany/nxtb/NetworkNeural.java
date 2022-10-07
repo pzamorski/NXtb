@@ -26,7 +26,6 @@ import org.neuroph.nnet.learning.BackPropagation;
 import org.neuroph.nnet.learning.DynamicBackPropagation;
 import org.neuroph.nnet.learning.MomentumBackpropagation;
 
-
 /**
  *
  * @author warsztat
@@ -34,18 +33,19 @@ import org.neuroph.nnet.learning.MomentumBackpropagation;
 public class NetworkNeural {
 
     private String inputFileName;
+    private String walidationinputFileName;
     private int numberInput;
     private int numberOutput;
     private final int MaxIterations = 1200000;
-    private final double LearningRate = 0.9;
-    private final double MaxError = 0.01;
+    private final double LearningRate = 0.3;
+    private final double MaxError = 0.001;
     private DataSet dataSet;
+    private DataSet waldationdataSet;
     private int BackUpInterval = 15000;
     private String fileNameWeight;
     private int sprawnosc = 0;
 
     private MultiLayerPerceptron network;
-    
 
     public void setBackUpInterval(int BackUpInterval) {
         this.BackUpInterval = BackUpInterval;
@@ -55,30 +55,36 @@ public class NetworkNeural {
         this.numberInput = numberInput;
         this.numberOutput = numberOutput;
         this.inputFileName = "data/" + fileName + ".txt";
+        this.walidationinputFileName="data/" + fileName + "_Walidation.txt";
         this.fileNameWeight = fileName;
     }
 
-    public void setLayer(int L1, int L2) {
-        
-        // create MultiLayerPerceptron neural network
-        network = new MultiLayerPerceptron(numberInput, 900, numberOutput);
+    public void setLayer(int... neurons) {
 
-     
+        int[] inputlLayerOutput = new int[numberInput + neurons.length + numberOutput];
+        inputlLayerOutput[0] = numberInput;
+        int i = 0;
+        for (; i < neurons.length; i++) {
+            inputlLayerOutput[i + 1] = neurons[i];
+        }
+        inputlLayerOutput[i + 1] = numberOutput;
+
+        // create MultiLayerPerceptron neural network
+        network = new MultiLayerPerceptron(numberInput, 32,8, numberOutput);
+        //network = new MultiLayerPerceptron(inputlLayerOutput);
+
         // create training set from file
         dataSet = DataSet.createFromFile(inputFileName, numberInput, numberOutput, "\t");
-        // train the network with training set
-        
 
+        // train the network with training set
         DynamicBackPropagation db = new DynamicBackPropagation();
-        
-        db.setMomentumChange(100000);
-        db.setMaxMomentum(100000);
+
+        db.setMomentumChange(10000000);
+        db.setMaxMomentum(10000);
         network.setLearningRule(db);
         network.getLearningRule().addListener(new LearningListener());
-    
 
-        
-      network.getLearningRule().setLearningRate(LearningRate);
+        network.getLearningRule().setLearningRate(LearningRate);
         network.getLearningRule().setMaxError(MaxError);
         network.getLearningRule().setMaxIterations(MaxIterations);
 
@@ -143,8 +149,11 @@ public class NetworkNeural {
         double OpenPrice = 0;
         Scanner in = new Scanner(System.in);
 
-        System.out.println("Help: priceClose priceHigh  priceLow");
         for (int i = 0; i < 10; i++) {
+
+            System.out.println("Help: priceClose priceHigh  priceLow");
+            System.out.print("Podaj cene otwarcia: ");
+            OpenPrice = Double.valueOf(in.nextLine());
 
             for (int y = 0; y != numberInput; y++) {
 
@@ -164,13 +173,11 @@ public class NetworkNeural {
 
     }
 
-   
-    
     public int testNeuralNetwork() {
-
+        waldationdataSet = DataSet.createFromFile(walidationinputFileName, numberInput, numberOutput, "\t");
         int iloscProbek = 0;
         int punktySprawnosci = 0;
-        for (DataSetRow testSetRow : dataSet.getRows()) {
+        for (DataSetRow testSetRow : waldationdataSet.getRows()) {
 
             iloscProbek++;
             network.setInput(testSetRow.getInput());
@@ -231,11 +238,10 @@ public class NetworkNeural {
         public void handleLearningEvent(LearningEvent event) {
 
             DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
-            
+
             if (bp.getCurrentIteration() % 1000 == 0) {
-                
-                
-                System.out.println("Er: " + bp.getTotalNetworkError()+" Momentum: "+bp.getMomentum());
+
+                System.out.println("Er: " + bp.getTotalNetworkError() + " Momentum: " + bp.getMomentum());
 //                try {
 //                    System.out.print("Backup...");
 //                    saveWeight();
@@ -244,10 +250,9 @@ public class NetworkNeural {
 //                    Logger.getLogger(NetworkNeural.class.getName()).log(Level.SEVERE, null, ex);
 //                }
             }
-            
-                        if (bp.getCurrentIteration() % (BackUpInterval-1000) == 0) {
-                
-                
+
+            if (bp.getCurrentIteration() % (BackUpInterval - 1000) == 0) {
+
                 try {
                     System.out.print("Backup...");
                     saveWeight();
@@ -255,7 +260,7 @@ public class NetworkNeural {
                 } catch (IOException ex) {
                 }
             }
-                        
+
         }
 
     }

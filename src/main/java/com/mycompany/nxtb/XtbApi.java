@@ -65,12 +65,12 @@ public class XtbApi {
         return checkIsLogin();
     }
 
-    public void logout() throws APICommunicationException{
-                connector.close();
-            System.out.println("Połączenie zamkniete");
-    
+    public void logout() throws APICommunicationException {
+        connector.close();
+        System.out.println("Połączenie zamkniete");
+
     }
-    
+
     public boolean checkIsLogin() {
         if (loginResponse.getStatus() == true) {
             System.out.println("Zalogowany");
@@ -91,11 +91,10 @@ public class XtbApi {
                 AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
                 ServerTimeResponse serverTime = APICommandFactory.executeServerTimeCommand(connector);
 
-
-                // Print the message on console
                 System.out.print("...");
 
                 FileWriter myWriter = null;
+                FileWriter myWriterWal = null;
 //                 List all available symbols on console
                 String separator = "\t";
                 for (SymbolRecord symbol : availableSymbols.getSymbolRecords()) {
@@ -105,6 +104,7 @@ public class XtbApi {
 
                     if (!RateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
                         myWriter = new FileWriter("data/" + mySymbol + ".txt");
+                        myWriterWal = new FileWriter("data/" + mySymbol + "_Walidation.txt");
                         System.out.print(symbol.getSymbol() + " - zapis ");
 
                         System.out.print("...");
@@ -112,27 +112,40 @@ public class XtbApi {
 
                         for (i = 0; i < RateInfoRecord.size() - 4; i++) {
 
-                            double dpriceOpen = RateInfoRecord.get(i).getOpen();
-                            double dpriceClose = RateInfoRecord.get(i).getClose();
-                            double dpriceHigh = RateInfoRecord.get(i).getHigh();
-                            double dpriceLow = RateInfoRecord.get(i).getLow();
-                            double dvolumen = RateInfoRecord.get(i).getVol();
-                            int dPipsCO = (int) ((dpriceClose + dpriceOpen) - dpriceOpen);
+                            RateInfoRecord actualInfo = RateInfoRecord.get(i);
+                            RateInfoRecord next2Info = RateInfoRecord.get(i + 1);
+                            RateInfoRecord next3Info = RateInfoRecord.get(i + 2);
+
+                            double dpriceHigh = actualInfo.getHigh() + actualInfo.getOpen();
+                            double dpriceOpen = (dpriceHigh * 100) / actualInfo.getOpen();
+                            double dpriceClose = actualInfo.getOpen() + actualInfo.getClose();
+                            double dpriceLow = actualInfo.getOpen() + actualInfo.getLow();
+
+                            dpriceClose = (dpriceHigh * 100) / dpriceClose;
+                            dpriceLow = (dpriceHigh * 100) / dpriceLow;
+
+                            dpriceOpen = (int) ((dpriceOpen - 100) * 10);
+                            dpriceLow = (int) ((dpriceLow - 100) * 10);
+                            dpriceClose = (int) ((dpriceClose - 100) * 10);
+
+                            double dvolumen = actualInfo.getVol();
+                            int dPipsCO = (int) ((actualInfo.getClose() + actualInfo.getOpen()) - actualInfo.getOpen());
                             // double dPipsHL = dpriceHigh-dpriceLow;
 
-                            String priceClose = String.valueOf(dpriceClose / 100);
-                            String priceOpen = String.valueOf(dpriceOpen / 100);
-                            String priceHigh = String.valueOf(dpriceHigh / 100);
-                            String priceLow = String.valueOf(dpriceLow / 100);
+                            //System.out.println(dpriceOpen+" "+dpriceLow +" "+ dpriceClose);
+                            String priceClose = String.valueOf(dpriceClose);
+                            String priceOpen = String.valueOf(dpriceOpen);
+                            String priceHigh = String.valueOf(dpriceHigh);
+                            String priceLow = String.valueOf(dpriceLow);
                             String volumen = String.valueOf(dvolumen);
                             String pipsCO = String.valueOf(dPipsCO);
                             // String pipsHL = String.valueOf(dPipsHL);
 
-                            double dpriceOpen1 = RateInfoRecord.get(i + 1).getOpen();
-                            double dpriceClose1 = RateInfoRecord.get(i + 1).getClose();
-                            double dpriceHigh1 = RateInfoRecord.get(i + 1).getHigh();
-                            double dpriceLow1 = RateInfoRecord.get(i + 1).getLow();
-                            double dvolumen1 = RateInfoRecord.get(i + 1).getVol();
+                            double dpriceOpen1 = next2Info.getOpen();
+                            double dpriceClose1 = next2Info.getClose();
+                            double dpriceHigh1 = next2Info.getHigh();
+                            double dpriceLow1 = next2Info.getLow();
+                            double dvolumen1 = next2Info.getVol();
                             int dPipsCO1 = (int) ((dpriceClose1 + dpriceOpen1) - dpriceOpen1);
 
                             String priceClose1 = String.valueOf(dpriceClose1 / 100);
@@ -182,12 +195,11 @@ public class XtbApi {
 //                            String priceLow1234 = String.valueOf(dpriceLow1234 / 100);
 //                            String volumen1234 = String.valueOf(dvolumen1234);
 //                            String pipsCO1234 = String.valueOf(dPipsCO1234);
-
- String result1 = "1";
+                            String result1 = "1";
                             if (dPipsCO <= 0) {
                                 result1 = "0";
                             }
-                            
+
                             String result = "1";
                             if (dPipsCO1 <= 0) {
                                 result = "0";
@@ -196,12 +208,13 @@ public class XtbApi {
                             //String ctm = String.valueOf(RateInfoRecord.get(i).getCtm());
                             try {
 
-                                myWriter.write(priceClose + separator + priceHigh + separator + priceLow + separator + result1 + separator +
-//                                        priceClose1 + separator + priceHigh1 + separator + priceLow1 + separator +
-//                                        priceClose12 + separator + priceHigh12 + separator + priceLow12 + separator +
-//                                        priceClose123 + separator + priceHigh123 + separator + priceLow123 + separator +
-                                        result);
-                                myWriter.write(System.lineSeparator());
+                                if (i % 2 == 0) {
+                                    myWriter.write(priceOpen + separator + priceClose + separator + priceLow + separator + result);
+                                    myWriter.write(System.lineSeparator());
+                                } else {
+                                    myWriterWal.write(priceOpen + separator + priceClose + separator + priceLow + separator + result);
+                                    myWriterWal.write(System.lineSeparator());
+                                }
 
                             } catch (IOException e) {
                                 System.out.println("error");
@@ -211,6 +224,7 @@ public class XtbApi {
                         }
 
                         myWriter.close();
+                        myWriterWal.close();
                         System.out.print(" OK" + "[" + i + "]");
                         System.out.println("");
                         break;//słaby internet do usuniecia
@@ -226,7 +240,6 @@ public class XtbApi {
             }
 
             // Close connection
-
             // Catch errors
         } catch (UnknownHostException e) {
         } catch (IOException | APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
@@ -238,20 +251,18 @@ public class XtbApi {
         connector = new SyncAPIConnector(ServerEnum.DEMO);
 
     }
-    
-    public double[] getActualPrice(){
-    
-     try {
+
+    public double[] getActualPrice() {
+
+        try {
 
             if (loginResponse.getStatus() == true) {
 
                 AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
                 ServerTimeResponse serverTime = APICommandFactory.executeServerTimeCommand(connector);
 
-
                 // Print the message on console
                 System.out.print("...");
-
 
 //                 List all available symbols on console
                 String separator = "\t";
@@ -261,26 +272,23 @@ public class XtbApi {
                     List<RateInfoRecord> RateInfoRecord = chartLastCommand.getRateInfos();
 
                     if (!RateInfoRecord.isEmpty() && symbol.getSymbol().contains(lastSymbol)) {
-                        System.out.print("GET: "+symbol.getSymbol());
+                        System.out.print("GET: " + symbol.getSymbol());
 
                         System.out.print("...");
 
+                        int lastIndexInfoRecord = RateInfoRecord.size() - 1;
+                        double dpriceOpen = RateInfoRecord.get(lastIndexInfoRecord).getOpen();
+                        double dpriceClose = RateInfoRecord.get(lastIndexInfoRecord).getClose();
+                        double dpriceHigh = RateInfoRecord.get(lastIndexInfoRecord).getHigh();
+                        double dpriceLow = RateInfoRecord.get(lastIndexInfoRecord).getLow();
+                        double dvolumen = RateInfoRecord.get(lastIndexInfoRecord).getVol();
+                        int dPipsCO = (int) ((dpriceClose + dpriceOpen) - dpriceOpen);
+                        // double dPipsHL = dpriceHigh-dpriceLow;
 
+                        actualPrice[0] = dpriceClose / 100;
+                        actualPrice[1] = dpriceHigh / 100;
+                        actualPrice[2] = dpriceLow / 100;
 
-                            int lastIndexInfoRecord=RateInfoRecord.size()-1;
-                            double dpriceOpen = RateInfoRecord.get(lastIndexInfoRecord).getOpen();
-                            double dpriceClose = RateInfoRecord.get(lastIndexInfoRecord).getClose();
-                            double dpriceHigh = RateInfoRecord.get(lastIndexInfoRecord).getHigh();
-                            double dpriceLow = RateInfoRecord.get(lastIndexInfoRecord).getLow();
-                            double dvolumen = RateInfoRecord.get(lastIndexInfoRecord).getVol();
-                            int dPipsCO = (int) ((dpriceClose + dpriceOpen) - dpriceOpen);
-                            // double dPipsHL = dpriceHigh-dpriceLow;
-
-
-                            actualPrice[0]=dpriceClose/100;
-                            actualPrice[1]=dpriceHigh/100;
-                            actualPrice[2]=dpriceLow/100;
-                            
                         break;//słaby internet do usuniecia
                     }
 
@@ -293,17 +301,15 @@ public class XtbApi {
 
             }
 
-
-
             // Catch errors
         } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
-     return actualPrice;
-    
+        return actualPrice;
+
     }
-    
-    public void buy(){
-    try {
+
+    public void buy() {
+        try {
 
             if (loginResponse.getStatus() == true) {
 
@@ -313,7 +319,6 @@ public class XtbApi {
                 // Print the message on console
                 System.out.print("...");
 
-
             } else {
 
                 // Print the error on console
@@ -321,13 +326,10 @@ public class XtbApi {
 
             }
 
-
-
             // Catch errors
         } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
 
-    
     }
 
 }
