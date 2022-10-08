@@ -247,8 +247,8 @@ public class NetworkNeural {
 
             DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
 
-            if (((bp.getCurrentIteration()-1) % (MaxIterations/10) == 0)||((int)(prevError*1.0E3)!=(int)(bp.getTotalNetworkError()*1.0E3))) {
-                
+           // if (((bp.getCurrentIteration()-1) % (MaxIterations/10) == 0)||((int)(prevError*1.0E3)!=(int)(bp.getTotalNetworkError()*1.0E3))) {
+                if (((bp.getCurrentIteration()-1) % (4000) == 0)) {
                 double Error = bp.getTotalNetworkError();
                 double momentum = bp.getMomentum();
                 double changeError=Math.abs(prevError-Error);
