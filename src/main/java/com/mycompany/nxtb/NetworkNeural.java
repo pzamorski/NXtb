@@ -247,25 +247,26 @@ public class NetworkNeural {
 
             DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
 
-            if ((bp.getCurrentIteration()-1) % 2000 == 0) {
+            if (((bp.getCurrentIteration()-1) % (MaxIterations/10) == 0)||((int)(prevError*1.0E3)!=(int)(bp.getTotalNetworkError()*1.0E3))) {
+                
                 double Error = bp.getTotalNetworkError();
                 double momentum = bp.getMomentum();
                 double changeError=Math.abs(prevError-Error);
                 
                 
                 //System.out.println("E: " +Error+ "  M: " + momentum+"  R: "+changeError);
-                System.out.printf("E: %.3f M: %f R: %.9f \n",Error,momentum,changeError);
+                System.out.printf("E: %.3f M: %.0f R: %.0f \n",Error,momentum*1.0E6,changeError*1.0E10);
                 
-                if(changeError<1E-9&&changeError>0){
+                if(changeError<1E-10&&changeError>0){
                     System.out.println("Przebudowa sieci");
                     treningFalse=true;
                     network.stopLearning();
 
                 } 
+               
                 
-                prevError = bp.getTotalNetworkError();
             }
-
+            prevError = bp.getTotalNetworkError();
 
         }
 

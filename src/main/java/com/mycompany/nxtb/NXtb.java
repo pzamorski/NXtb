@@ -96,8 +96,9 @@ public class NXtb {
 
                         }
 
-                        long jobTime = System.nanoTime()-jobStart;
-                        System.out.println("Czas nauki: "+ jobTime+" dla konfiguracji: ["+(k+j)+"]"+"["+k+
+                        long jobTime = (long) ((System.nanoTime()-jobStart)*1.0E-9);
+
+                        System.out.println("Czas nauki: "+ jobTime+"[s] dla konfiguracji: ["+(k+j)+"]"+"["+k+
                                 "] Osiągniety błąd: "+nn.getErrorAverage()+" Sprawność: "+nn.testNeuralNetwork()+" TrenigFalse: "+nn.isTreningFalse()); 
                     }
                     
