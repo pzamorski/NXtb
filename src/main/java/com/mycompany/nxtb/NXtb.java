@@ -21,18 +21,16 @@ public class NXtb {
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
 
         String symbol = "KGH.PL";
-        int Interval = 20000;
+        int Interval = 520000;
         XtbApi xtbApi;
         NetworkNeural nn = new NetworkNeural();
 
         nn.setFileToTraining(3, 1, symbol);
-        nn.setLayer(100,10);
-        nn.setBackUpInterval(Interval);
+        nn.setLayer(1, 1);
 
-        String commend=null;
+        String commend = null;
         Scanner in = new Scanner(System.in);
 
-        
         if (args.length == 0) {
 
             System.out.println("get-Pobierz swieczki");
@@ -46,15 +44,14 @@ public class NXtb {
             System.out.print(">>");
 
             String[] execut = in.nextLine().split(" ");
-            args=new String[execut.length];
-            args=execut;
-   
-        }
+            args = new String[execut.length];
+            args = execut;
 
+        }
 
         for (int i = 0; i < args.length; i++) {
             commend = args[i];
-            
+
             switch (commend) {
                 case "get":
                     xtbApi = new XtbApi();
@@ -74,18 +71,41 @@ public class NXtb {
                     break;
 
                 case "lern2":
+                    
                     System.out.println("Start");
-                    //nn.startLern(1);
+                    long jobStart = 0;
+                    for (int k = 1; k < 25; k++) {
+                        
+                    
+                    for (int j = 2; j < 25; j++) {
+                        System.out.println("Configuracja: ["+(k+j)+"]"+"["+k+"]");
+                        nn = new NetworkNeural();
+                        nn.setFileToTraining(3, 1, symbol);
 
-                    nn.loadWeight();
-                    nn.setInterval(Interval);
-                    while (nn.testNeuralNetwork() < 100) {
+                        nn.setLayer(k+j, k);
+                        nn.saveWeight();
+                        nn.loadWeight();
+                        nn.setInterval(Interval);
+                        jobStart = System.nanoTime();
+                        while (nn.isTreningFalse() != true) {
+                            
+                            nn.testNeuralNetwork();
+                            nn.startLern();
 
-                        nn.startLern();
-                        //nn.saveWeight();
+                            nn.saveWeight();
+
+                        }
+
+                        long jobTime = System.nanoTime()-jobStart;
+                        System.out.println("Czas nauki: "+ jobTime+" dla konfiguracji: ["+(k+j)+"]"+"["+k+
+                                "] Osiągniety błąd: "+nn.getErrorAverage()+" Sprawność: "+nn.testNeuralNetwork()+" TrenigFalse: "+nn.isTreningFalse()); 
+                    }
+                    
+                    
                     }
                     System.out.println("Siec wytrenowana");
                     break;
+
                 case "test":
                     nn.testNeuralNetwork();
                     break;
