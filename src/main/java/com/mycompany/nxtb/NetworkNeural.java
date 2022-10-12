@@ -45,10 +45,15 @@ public class NetworkNeural {
     private int sprawnosc = 0;
     private double[] ErrorAverage = new double[5];
     private double prevError;
-    private boolean treningFalse=false;
+    private boolean treningFalse = false;
+    private static double minimulError = 1;
+    private static int layer1;
+    private static int layer2;
+    private int n1;
+    private int n2;
+    Average av;
 
     private MultiLayerPerceptron network;
-
 
     public void setFileToTraining(int numberInput, int numberOutput, String fileName) {
         this.numberInput = numberInput;
@@ -58,11 +63,13 @@ public class NetworkNeural {
         this.fileNameWeight = fileName;
     }
 
-    public void setLayer(int n1,int n2) {
+    public void setLayer(int n1, int n2) {
 
-
+        this.n1=n1;
+        this.n2=n2;
+        av = new Average(20);
         // create MultiLayerPerceptron neural network
-        network = new MultiLayerPerceptron(numberInput, n1, n2, numberOutput);
+        network = new MultiLayerPerceptron(numberInput, this.n1, this.n2, numberOutput);
         //network = new MultiLayerPerceptron(inputlLayerOutput);
 
         // create training set from file
@@ -88,8 +95,6 @@ public class NetworkNeural {
         return treningFalse;
     }
 
-    
-    
     public void saveWeight() throws IOException {
         System.out.println("Save Weights");
         FileWriter myWriter = new FileWriter("data/" + fileNameWeight + "_Weights.txt");
@@ -247,24 +252,29 @@ public class NetworkNeural {
 
             DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
 
-           // if (((bp.getCurrentIteration()-1) % (MaxIterations/10) == 0)||((int)(prevError*1.0E3)!=(int)(bp.getTotalNetworkError()*1.0E3))) {
-                if (((bp.getCurrentIteration()-1) % (4000) == 0)) {
+            // if (((bp.getCurrentIteration()-1) % (MaxIterations/10) == 0)||((int)(prevError*1.0E3)!=(int)(bp.getTotalNetworkError()*1.0E3))) {
+            if (((bp.getCurrentIteration() - 1) % (4000) == 0)) {
                 double Error = bp.getTotalNetworkError();
+                if (minimulError > Error) {
+                    minimulError = Error;
+                    layer1=n1;
+                    layer2=n2;
+                }
+
                 double momentum = bp.getMomentum();
-                double changeError=Math.abs(prevError-Error);
-                
-                
+                double changeError = Math.abs(prevError - Error);
+                double avarageChcngeError = av.getAverage(changeError);
+
                 //System.out.println("E: " +Error+ "  M: " + momentum+"  R: "+changeError);
-                System.out.printf("E: %.3f M: %.0f R: %.0f \n",Error,momentum*1.0E6,changeError*1.0E10);
-                
-                if(changeError<1E-10&&changeError>0){
+                System.out.printf("E: %.3f M: %.0f R: %.0f MinE: %.3f ->[%d][%d]\n", Error, momentum * 1.0E6, avarageChcngeError * 1.0E14, minimulError, layer1, layer2);
+
+                if (avarageChcngeError < 1E-14 && changeError > 0) {
                     System.out.println("Przebudowa sieci");
-                    treningFalse=true;
+                    treningFalse = true;
                     network.stopLearning();
 
-                } 
-               
-                
+                }
+
             }
             prevError = bp.getTotalNetworkError();
 

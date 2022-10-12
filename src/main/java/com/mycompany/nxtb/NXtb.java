@@ -20,12 +20,14 @@ public class NXtb {
 
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
 
+        
+        
         String symbol = "KGH.PL";
         int Interval = 520000;
         XtbApi xtbApi;
         NetworkNeural nn = new NetworkNeural();
 
-        nn.setFileToTraining(3, 1, symbol);
+        nn.setFileToTraining(8, 1, symbol);
         nn.setLayer(1, 1);
 
         String commend = null;
@@ -74,13 +76,13 @@ public class NXtb {
                     
                     System.out.println("Start");
                     long jobStart = 0;
-                    for (int k = 1; k < 25; k++) {
+                    for (int k = 2; k < 100; k++) {
                         
                     
-                    for (int j = 2; j < 25; j++) {
+                    for (int j = 3; j < 100; j++) {
                         System.out.println("Configuracja: ["+(k+j)+"]"+"["+k+"]");
                         nn = new NetworkNeural();
-                        nn.setFileToTraining(3, 1, symbol);
+                        nn.setFileToTraining(8, 1, symbol);
 
                         nn.setLayer(k+j, k);
                         nn.saveWeight();

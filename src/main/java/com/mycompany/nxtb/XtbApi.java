@@ -112,40 +112,40 @@ public class XtbApi {
 
                         for (i = 0; i < RateInfoRecord.size() - 4; i++) {
 
-                            RateInfoRecord actualInfo = RateInfoRecord.get(i);
+                            RateInfoRecord next1Info = RateInfoRecord.get(i);
                             RateInfoRecord next2Info = RateInfoRecord.get(i + 1);
                             RateInfoRecord next3Info = RateInfoRecord.get(i + 2);
 
-                            double dpriceHigh = actualInfo.getHigh() + actualInfo.getOpen();
-                            double dpriceOpen = (dpriceHigh * 100) / actualInfo.getOpen();
-                            double dpriceClose = actualInfo.getOpen() + actualInfo.getClose();
-                            double dpriceLow = actualInfo.getOpen() + actualInfo.getLow();
-
-                            dpriceClose = (dpriceHigh * 100) / dpriceClose;
-                            dpriceLow = (dpriceHigh * 100) / dpriceLow;
-
-                            dpriceOpen = (int) ((dpriceOpen - 100) * 10);
-                            dpriceLow = (int) ((dpriceLow - 100) * 10);
-                            dpriceClose = (int) ((dpriceClose - 100) * 10);
-
-                            double dvolumen = actualInfo.getVol();
-                            int dPipsCO = (int) ((actualInfo.getClose() + actualInfo.getOpen()) - actualInfo.getOpen());
+//                            double dpriceHigh = actualInfo.getHigh() + actualInfo.getOpen();
+//                            double dpriceOpen = (dpriceHigh * 100) / actualInfo.getOpen();
+//                            double dpriceClose = actualInfo.getOpen() + actualInfo.getClose();
+//                            double dpriceLow = actualInfo.getOpen() + actualInfo.getLow();
+//
+//                            dpriceClose = (dpriceHigh * 100) / dpriceClose;
+//                            dpriceLow = (dpriceHigh * 100) / dpriceLow;
+//
+//                            dpriceOpen = (int) ((dpriceOpen - 100) * 10);
+//                            dpriceLow = (int) ((dpriceLow - 100) * 10);
+//                            dpriceClose = (int) ((dpriceClose - 100) * 10);
+//
+//                            double dvolumen = actualInfo.getVol();
+//                            int dPipsCO = (int) ((actualInfo.getClose() + actualInfo.getOpen()) - actualInfo.getOpen());
                             // double dPipsHL = dpriceHigh-dpriceLow;
 
                             //System.out.println(dpriceOpen+" "+dpriceLow +" "+ dpriceClose);
-                            String priceClose = String.valueOf(dpriceClose);
-                            String priceOpen = String.valueOf(dpriceOpen);
-                            String priceHigh = String.valueOf(dpriceHigh);
-                            String priceLow = String.valueOf(dpriceLow);
-                            String volumen = String.valueOf(dvolumen);
-                            String pipsCO = String.valueOf(dPipsCO);
+//                            String priceClose = String.valueOf(dpriceClose);
+//                            String priceOpen = String.valueOf(dpriceOpen);
+//                            String priceHigh = String.valueOf(dpriceHigh);
+//                            String priceLow = String.valueOf(dpriceLow);
+//                            String volumen = String.valueOf(dvolumen);
+//                            String pipsCO = String.valueOf(dPipsCO);
                             // String pipsHL = String.valueOf(dPipsHL);
 
-                            double dpriceOpen1 = next2Info.getOpen();
-                            double dpriceClose1 = next2Info.getClose();
-                            double dpriceHigh1 = next2Info.getHigh();
-                            double dpriceLow1 = next2Info.getLow();
-                            double dvolumen1 = next2Info.getVol();
+                            double dpriceOpen1 = next1Info.getOpen();
+                            double dpriceClose1 = next1Info.getClose();
+                            double dpriceHigh1 = next1Info.getHigh();
+                            double dpriceLow1 = next1Info.getLow();
+                            double dvolumen1 = next1Info.getVol();
                             int dPipsCO1 = (int) ((dpriceClose1 + dpriceOpen1) - dpriceOpen1);
 
                             String priceClose1 = String.valueOf(dpriceClose1 / 100);
@@ -155,19 +155,34 @@ public class XtbApi {
                             String volumen1 = String.valueOf(dvolumen1);
                             String pipsCO1 = String.valueOf(dPipsCO1);
 
-//                            double dpriceOpen12 = RateInfoRecord.get(i + 2).getOpen();
-//                            double dpriceClose12 = RateInfoRecord.get(i + 2).getClose();
-//                            double dpriceHigh12 = RateInfoRecord.get(i + 2).getHigh();
-//                            double dpriceLow12 = RateInfoRecord.get(i + 2).getLow();
-//                            double dvolumen12 = RateInfoRecord.get(i + 2).getVol();
-//                            int dPipsCO12 = (int) ((dpriceClose12 + dpriceOpen12) - dpriceOpen12);
-//
-//                            String priceClose12 = String.valueOf(dpriceClose12 / 100);
-//                            String priceOpen12 = String.valueOf(dpriceOpen12 / 100);
-//                            String priceHigh12 = String.valueOf(dpriceHigh12 / 100);
-//                            String priceLow12 = String.valueOf(dpriceLow12 / 100);
-//                            String volumen12 = String.valueOf(dvolumen12);
-//                            String pipsCO12 = String.valueOf(dPipsCO12);
+                            double dpriceOpen12 = next2Info.getOpen();
+                            double dpriceClose12 = next2Info.getClose();
+                            double dpriceHigh12 = next2Info.getHigh();
+                            double dpriceLow12 = next2Info.getLow();
+                            double dvolumen12 = next2Info.getVol();
+                            int dPipsCO12 = (int) ((dpriceClose12 + dpriceOpen12) - dpriceOpen12);
+
+                            String priceClose12 = String.valueOf(dpriceClose12 / 100);
+                            String priceOpen12 = String.valueOf(dpriceOpen12 / 100);
+                            String priceHigh12 = String.valueOf(dpriceHigh12 / 100);
+                            String priceLow12 = String.valueOf(dpriceLow12 / 100);
+                            String volumen12 = String.valueOf(dvolumen12);
+                            String pipsCO12 = String.valueOf(dPipsCO12);
+                            
+                            double dpriceOpen123 = next3Info.getOpen();
+                            double dpriceClose123 = next3Info.getClose();
+                            double dpriceHigh123 = next3Info.getHigh();
+                            double dpriceLow123 = next3Info.getLow();
+                            double dvolumen123 = next3Info.getVol();
+                            int dPipsCO123 = (int) ((dpriceClose123 + dpriceOpen123) - dpriceOpen123);
+
+                            String priceClose123 = String.valueOf(dpriceClose123 / 100);
+                            String priceOpen123 = String.valueOf(dpriceOpen123 / 100);
+                            String priceHigh123 = String.valueOf(dpriceHigh123 / 100);
+                            String priceLow123 = String.valueOf(dpriceLow123 / 100);
+                            String volumen123 = String.valueOf(dvolumen123);
+                            String pipsCO123 = String.valueOf(dPipsCO123);
+
 //                            double dpriceOpen123 = RateInfoRecord.get(i + 3).getOpen();
 //                            double dpriceClose123 = RateInfoRecord.get(i + 3).getClose();
 //                            double dpriceHigh123 = RateInfoRecord.get(i + 3).getHigh();
@@ -195,13 +210,10 @@ public class XtbApi {
 //                            String priceLow1234 = String.valueOf(dpriceLow1234 / 100);
 //                            String volumen1234 = String.valueOf(dvolumen1234);
 //                            String pipsCO1234 = String.valueOf(dPipsCO1234);
-                            String result1 = "1";
-                            if (dPipsCO <= 0) {
-                                result1 = "0";
-                            }
+
 
                             String result = "1";
-                            if (dPipsCO1 <= 0) {
+                            if (dPipsCO123 <= 0) {
                                 result = "0";
                             }
 
@@ -209,11 +221,15 @@ public class XtbApi {
                             try {
 
                                 if (i % 2 == 0) {
-                                    myWriter.write(priceOpen + separator + priceClose + separator + priceLow + separator + result);
+                                    myWriter.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
+                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
+                                            result);
                                     myWriter.write(System.lineSeparator());
                                 } else {
-                                    myWriterWal.write(priceOpen + separator + priceClose + separator + priceLow + separator + result);
-                                    myWriterWal.write(System.lineSeparator());
+                                    myWriterWal.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
+                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
+                                            result);
+                                            myWriterWal.write(System.lineSeparator());
                                 }
 
                             } catch (IOException e) {
