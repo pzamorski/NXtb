@@ -79,7 +79,8 @@ public class NXtb {
                     for (int k = 2; k < 100; k++) {
                         
                     
-                    for (int j = 3; j < 100; j++) {
+                    for (int j = 10; j < 100; j++) {
+
                         System.out.println("Configuracja: ["+(k+j)+"]"+"["+k+"]");
                         nn = new NetworkNeural();
                         nn.setFileToTraining(8, 1, symbol);

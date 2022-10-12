@@ -78,8 +78,8 @@ public class NetworkNeural {
         // train the network with training set
         DynamicBackPropagation db = new DynamicBackPropagation();
 
-        db.setMomentumChange(2d);
-//        db.setMaxMomentum(100000);
+        db.setMomentumChange(100000);
+        db.setMaxMomentum(100000);
         network.setLearningRule(db);
         network.getLearningRule().addListener(new LearningListener());
 
