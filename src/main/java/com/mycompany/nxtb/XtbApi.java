@@ -145,7 +145,7 @@ public class XtbApi {
                             double dpriceClose1 = next1Info.getClose();
                             double dpriceHigh1 = next1Info.getHigh();
                             double dpriceLow1 = next1Info.getLow();
-                            double dvolumen1 = next1Info.getVol();
+                            double dvolumen1 = next1Info.getVol()/1000;
                             int dPipsCO1 = (int) ((dpriceClose1 + dpriceOpen1) - dpriceOpen1);
 
                             String priceClose1 = String.valueOf(dpriceClose1 / 100);
@@ -159,7 +159,7 @@ public class XtbApi {
                             double dpriceClose12 = next2Info.getClose();
                             double dpriceHigh12 = next2Info.getHigh();
                             double dpriceLow12 = next2Info.getLow();
-                            double dvolumen12 = next2Info.getVol();
+                            double dvolumen12 = next2Info.getVol()/1000;
                             int dPipsCO12 = (int) ((dpriceClose12 + dpriceOpen12) - dpriceOpen12);
 
                             String priceClose12 = String.valueOf(dpriceClose12 / 100);
@@ -173,7 +173,7 @@ public class XtbApi {
                             double dpriceClose123 = next3Info.getClose();
                             double dpriceHigh123 = next3Info.getHigh();
                             double dpriceLow123 = next3Info.getLow();
-                            double dvolumen123 = next3Info.getVol();
+                            double dvolumen123 = next3Info.getVol()/1000;
                             int dPipsCO123 = (int) ((dpriceClose123 + dpriceOpen123) - dpriceOpen123);
 
                             String priceClose123 = String.valueOf(dpriceClose123 / 100);

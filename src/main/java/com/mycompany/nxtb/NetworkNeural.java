@@ -63,23 +63,31 @@ public class NetworkNeural {
         this.fileNameWeight = fileName;
     }
 
+    public void setListener(LearningListener learningListener) {
+        network.getLearningRule().addListener(learningListener);
+    }
+
     public void setLayer(int n1, int n2) {
 
-        this.n1=n1;
-        this.n2=n2;
+        this.n1 = n1;
+        this.n2 = n2;
         av = new Average(20);
         // create MultiLayerPerceptron neural network
-        network = new MultiLayerPerceptron(numberInput, this.n1, this.n2, numberOutput);
-        //network = new MultiLayerPerceptron(inputlLayerOutput);
+        if (n2 == 0) {
+            network = new MultiLayerPerceptron(numberInput, this.n1, numberOutput);
+        } else {
+            network = new MultiLayerPerceptron(numberInput, this.n1, this.n2, numberOutput);
+        }
 
+        //network = new MultiLayerPerceptron(inputlLayerOutput);
         // create training set from file
         dataSet = DataSet.createFromFile(inputFileName, numberInput, numberOutput, "\t");
 
         // train the network with training set
         DynamicBackPropagation db = new DynamicBackPropagation();
 
-        db.setMomentumChange(100000);
-        db.setMaxMomentum(100000);
+//        db.setMomentumChange(100000);
+//        db.setMaxMomentum(100000);
         network.setLearningRule(db);
         network.getLearningRule().addListener(new LearningListener());
 
@@ -156,12 +164,11 @@ public class NetworkNeural {
 
             System.out.println("Help: priceClose priceHigh  priceLow");
             System.out.print("Podaj cene otwarcia: ");
-            OpenPrice = Double.valueOf(in.nextLine());
 
             for (int y = 0; y != numberInput; y++) {
 
                 System.out.print("Podaj wartość wejscia numer " + (y + 1) + ": ");
-                input[y] = OpenPrice - Double.valueOf(in.nextLine());
+                input[y] = Double.valueOf(in.nextLine());
             }
             network.setInput(input);
             network.calculate();
@@ -255,10 +262,15 @@ public class NetworkNeural {
             // if (((bp.getCurrentIteration()-1) % (MaxIterations/10) == 0)||((int)(prevError*1.0E3)!=(int)(bp.getTotalNetworkError()*1.0E3))) {
             if (((bp.getCurrentIteration() - 1) % (4000) == 0)) {
                 double Error = bp.getTotalNetworkError();
+                if (Error <= 0.001) {
+                    treningFalse = false;
+                    network.stopLearning();
+
+                }
                 if (minimulError > Error) {
                     minimulError = Error;
-                    layer1=n1;
-                    layer2=n2;
+                    layer1 = n1;
+                    layer2 = n2;
                 }
 
                 double momentum = bp.getMomentum();
@@ -266,9 +278,9 @@ public class NetworkNeural {
                 double avarageChcngeError = av.getAverage(changeError);
 
                 //System.out.println("E: " +Error+ "  M: " + momentum+"  R: "+changeError);
-                System.out.printf("E: %.3f M: %.0f R: %.0f MinE: %.3f ->[%d][%d]\n", Error, momentum * 1.0E6, avarageChcngeError * 1.0E14, minimulError, layer1, layer2);
+                System.out.printf("E: %.3f M: %.0f R: %.0f MinE: %.3f ->[%d][%d]\n", Error, momentum * 1.0E6, avarageChcngeError * 1.0E10, minimulError, layer1, layer2);
 
-                if (avarageChcngeError < 1E-14 && changeError > 0) {
+                if (avarageChcngeError < 1E-10 || avarageChcngeError == 0) {
                     System.out.println("Przebudowa sieci");
                     treningFalse = true;
                     network.stopLearning();
@@ -276,6 +288,14 @@ public class NetworkNeural {
                 }
 
             }
+//            if (((bp.getCurrentIteration() - 1) % (MaxIterations/2) == 0)) {
+//                try {
+//                    saveWeight();
+//                } catch (IOException ex) {
+//                    Logger.getLogger(NetworkNeural.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//            
+//            }
             prevError = bp.getTotalNetworkError();
 
         }
