@@ -20,8 +20,10 @@ public class NXtb {
 
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
 
+        int l1=2,l2=0;
+        
         String symbol = "KGH.PL";
-        int Interval = 520000;
+        int Interval = 20000;
         XtbApi xtbApi;
         NetworkNeural nn = new NetworkNeural();
 
@@ -33,6 +35,7 @@ public class NXtb {
         if (args.length == 0) {
 
             System.out.println("get-Pobierz swieczki");
+            System.out.println("conf-manual setlayer");
             System.out.println("lern-Trening sieci");
             System.out.println("find-Szukanie optymalnej sieci");
             System.out.println("test-Sprawność sieci");
@@ -58,13 +61,10 @@ public class NXtb {
                     xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 6090000000L);
                     xtbApi.logout();
                     break;
-                case "lern":
-
-                    int l1 = 2,
-                     l2 = 0;
-                    if (args.length>1) {
+                case "conf":
+                    if (args.length > 1) {
                         l1 = Integer.valueOf(args[i + 1]);
-                        if (args.length>2) {
+                        if (args.length > 2) {
                             l2 = Integer.valueOf(args[i + 2]);
                         }
 
@@ -75,8 +75,24 @@ public class NXtb {
 
                     }
                     nn.setLayer(l1, l2);
-                    System.out.println("Set layer:["+l1+"]["+l2+"]");
-                    while (nn.testNeuralNetwork() <= 100) {
+                    break;
+                case "lern":
+
+                    if (args.length > 1) {
+                        l1 = Integer.valueOf(args[i + 1]);
+                        if (args.length > 2) {
+                            l2 = Integer.valueOf(args[i + 2]);
+                        }
+
+                    } else {
+                        System.out.print("Set layer: ");
+                        l1 = Integer.valueOf(in.nextLine());
+                        l2 = Integer.valueOf(in.nextLine());
+
+                    }
+                    nn.setLayer(l1, l2);
+                    System.out.println("Set layer:[" + l1 + "][" + l2 + "]");
+                    while (nn.testNeuralNetwork()<=100) {
 
                         nn.startLern();
                         nn.saveWeight();

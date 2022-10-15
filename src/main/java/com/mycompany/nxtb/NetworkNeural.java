@@ -36,9 +36,9 @@ public class NetworkNeural {
     private String walidationinputFileName;
     private int numberInput;
     private int numberOutput;
-    private final int MaxIterations = 1200000;
+    private final int MaxIterations = 12000;
     private final double LearningRate = 0.9;
-    private final double MaxError = 0.001;
+    private final double MaxError = 0.0001;
     private DataSet dataSet;
     private DataSet waldationdataSet;
     private String fileNameWeight;
@@ -143,10 +143,12 @@ public class NetworkNeural {
         }
     }
 
-    public void startLern() {
+    public boolean startLern() {
 
         network.getLearningRule().addListener(new LearningListener());
         network.learn(dataSet);
+        return isTreningFalse();
+
     }
 
     void startFind() {
@@ -166,9 +168,8 @@ public class NetworkNeural {
         Scanner in = new Scanner(System.in);
 
         for (int i = 0; i < 10; i++) {
-
-            System.out.println("Help: priceClose priceHigh  priceLow");
-            System.out.print("Podaj cene otwarcia: ");
+    
+            System.out.println("Help: priceHigh1 priceClose1  priceLow1 volumen1/1000 priceHigh12 priceClose12 priceLow12 volumen12/1000");
 
             for (int y = 0; y != numberInput; y++) {
 
@@ -180,7 +181,7 @@ public class NetworkNeural {
             out = network.getOutput();
             for (int j = 0; j < out.length; j++) {
 
-                System.out.println("wyjście " + (j + 1) + " = " + out[0]);
+                System.out.printf("Wyjście: %d = %.4f \n", j+1,out[0]);
                 System.out.println("");
             }
         }
@@ -264,23 +265,27 @@ public class NetworkNeural {
 
             DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
 
-            if (((bp.getCurrentIteration() - 1) % (4000) == 0)) {
+            if (((bp.getCurrentIteration() - 1) % (300) == 0)) {
                 double Error = bp.getTotalNetworkError();
-
 
                 double momentum = bp.getMomentum();
                 double changeError = Math.abs(prevError - Error);
                 double avarageChcngeError = av.getAverage(changeError);
 
-                System.out.printf("E: %.3f M: %.0f R: %.0f \n", Error, momentum * 1.0E6, avarageChcngeError * 1.0E10);
+                System.out.printf("E: %.6f M: %.0f R: %.0f \n", Error, momentum * 1.0E6, avarageChcngeError * 1.0E10);
 
+                if (bp.getTotalNetworkError() < bp.getMaxError()) {
+                    treningFalse = true;
+                    network.stopLearning();
+
+                }
 
             }
 
         }
 
     }
-    
+
     class FinderListener implements LearningEventListener {
 
         @Override
