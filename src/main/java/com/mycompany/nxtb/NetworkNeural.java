@@ -89,7 +89,6 @@ public class NetworkNeural {
 //        db.setMomentumChange(100000);
 //        db.setMaxMomentum(100000);
         network.setLearningRule(db);
-        network.getLearningRule().addListener(new LearningListener());
 
         network.getLearningRule().setLearningRate(LearningRate);
         network.getLearningRule().setMaxError(MaxError);
@@ -146,6 +145,12 @@ public class NetworkNeural {
 
     public void startLern() {
 
+        network.getLearningRule().addListener(new LearningListener());
+        network.learn(dataSet);
+    }
+
+    void startFind() {
+        network.getLearningRule().addListener(new FinderListener());
         network.learn(dataSet);
     }
 
@@ -253,6 +258,30 @@ public class NetworkNeural {
     }
 
     class LearningListener implements LearningEventListener {
+
+        @Override
+        public void handleLearningEvent(LearningEvent event) {
+
+            DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
+
+            if (((bp.getCurrentIteration() - 1) % (4000) == 0)) {
+                double Error = bp.getTotalNetworkError();
+
+
+                double momentum = bp.getMomentum();
+                double changeError = Math.abs(prevError - Error);
+                double avarageChcngeError = av.getAverage(changeError);
+
+                System.out.printf("E: %.3f M: %.0f R: %.0f \n", Error, momentum * 1.0E6, avarageChcngeError * 1.0E10);
+
+
+            }
+
+        }
+
+    }
+    
+    class FinderListener implements LearningEventListener {
 
         @Override
         public void handleLearningEvent(LearningEvent event) {
