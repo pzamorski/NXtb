@@ -203,7 +203,7 @@ public class NetworkNeural {
             //System.out.print("In: " + Arrays.toString(testSetRow.getInput()));
             //System.out.println(networkOutput[0] + "=" + testSetRow.getDesiredOutput()[0]);
             double tempOutWar = 0;
-            if (networkOutput[0] >= 0.5) {
+            if (networkOutput[0] >= 0.4) {
                 tempOutWar = 1;
             }
             if (tempOutWar == testSetRow.getDesiredOutput()[0]) {

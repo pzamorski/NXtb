@@ -213,21 +213,32 @@ public class XtbApi {
 
 
                             String result = "1";
-                            if (dPipsCO123 <= 0) {
+                            if (dPipsCO12 <= 0) {
                                 result = "0";
                             }
 
                             //String ctm = String.valueOf(RateInfoRecord.get(i).getCtm());
                             try {
 
+//                                if (i % 2 == 0) {
+//                                    myWriter.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
+//                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
+//                                            result);
+//                                    myWriter.write(System.lineSeparator());
+//                                } else {
+//                                    myWriterWal.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
+//                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
+//                                            result);
+//                                            myWriterWal.write(System.lineSeparator());
+//                                }
                                 if (i % 2 == 0) {
                                     myWriter.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
-                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
+ //                                           priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
                                             result);
                                     myWriter.write(System.lineSeparator());
                                 } else {
                                     myWriterWal.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
-                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
+//                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
                                             result);
                                             myWriterWal.write(System.lineSeparator());
                                 }

@@ -110,7 +110,7 @@ public class NXtb {
 
                             System.out.println("Configuracja: [" + (k + j) + "]" + "[" + k + "]");
                             nn = new NetworkNeural();
-                            nn.setFileToTraining(8, 1, symbol);
+                            nn.setFileToTraining(4, 1, symbol);
 
                             nn.setLayer(k + j, k);
                             nn.saveWeight();
