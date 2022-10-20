@@ -96,15 +96,15 @@ public class XtbApi {
                 FileWriter myWriter = null;
                 FileWriter myWriterWal = null;
 //                 List all available symbols on console
-                String separator = "\t";
+                String separator = ",";
                 for (SymbolRecord symbol : availableSymbols.getSymbolRecords()) {
                     // System.out.println("-> " + symbol.getSymbol() + " Ask: " + symbol.getAsk() + " Bid: " + symbol.getBid());
                     ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), period_code, serverTime.getTime() - time);
                     List<RateInfoRecord> RateInfoRecord = chartLastCommand.getRateInfos();
 
                     if (!RateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
-                        myWriter = new FileWriter("data/" + mySymbol + ".txt");
-                        myWriterWal = new FileWriter("data/" + mySymbol + "_Walidation.txt");
+                        myWriter = new FileWriter("data/"+mySymbol+"/" + mySymbol + ".txt");
+                        myWriterWal = new FileWriter("data/"+mySymbol+"/" + mySymbol + "_Walidation.txt");
                         System.out.print(symbol.getSymbol() + " - zapis ");
 
                         System.out.print("...");
@@ -115,132 +115,58 @@ public class XtbApi {
                             RateInfoRecord next1Info = RateInfoRecord.get(i);
                             RateInfoRecord next2Info = RateInfoRecord.get(i + 1);
                             RateInfoRecord next3Info = RateInfoRecord.get(i + 2);
+                            RateInfoRecord next4Info = RateInfoRecord.get(i + 3);
+                            RateInfoRecord next5Info = RateInfoRecord.get(i + 4);
 
-//                            double dpriceHigh = actualInfo.getHigh() + actualInfo.getOpen();
-//                            double dpriceOpen = (dpriceHigh * 100) / actualInfo.getOpen();
-//                            double dpriceClose = actualInfo.getOpen() + actualInfo.getClose();
-//                            double dpriceLow = actualInfo.getOpen() + actualInfo.getLow();
-//
-//                            dpriceClose = (dpriceHigh * 100) / dpriceClose;
-//                            dpriceLow = (dpriceHigh * 100) / dpriceLow;
-//
-//                            dpriceOpen = (int) ((dpriceOpen - 100) * 10);
-//                            dpriceLow = (int) ((dpriceLow - 100) * 10);
-//                            dpriceClose = (int) ((dpriceClose - 100) * 10);
-//
-//                            double dvolumen = actualInfo.getVol();
-//                            int dPipsCO = (int) ((actualInfo.getClose() + actualInfo.getOpen()) - actualInfo.getOpen());
-                            // double dPipsHL = dpriceHigh-dpriceLow;
-
-                            //System.out.println(dpriceOpen+" "+dpriceLow +" "+ dpriceClose);
-//                            String priceClose = String.valueOf(dpriceClose);
-//                            String priceOpen = String.valueOf(dpriceOpen);
-//                            String priceHigh = String.valueOf(dpriceHigh);
-//                            String priceLow = String.valueOf(dpriceLow);
-//                            String volumen = String.valueOf(dvolumen);
-//                            String pipsCO = String.valueOf(dPipsCO);
-                            // String pipsHL = String.valueOf(dPipsHL);
-
-                            double dpriceOpen1 = next1Info.getOpen();
-                            double dpriceClose1 = next1Info.getClose();
-                            double dpriceHigh1 = next1Info.getHigh();
-                            double dpriceLow1 = next1Info.getLow();
-                            double dvolumen1 = next1Info.getVol()/1000;
-                            int dPipsCO1 = (int) ((dpriceClose1 + dpriceOpen1) - dpriceOpen1);
-
-                            String priceClose1 = String.valueOf(dpriceClose1 / 100);
-                            String priceOpen1 = String.valueOf(dpriceOpen1 / 100);
-                            String priceHigh1 = String.valueOf(dpriceHigh1 / 100);
-                            String priceLow1 = String.valueOf(dpriceLow1 / 100);
-                            String volumen1 = String.valueOf(dvolumen1);
-                            String pipsCO1 = String.valueOf(dPipsCO1);
-
-                            double dpriceOpen12 = next2Info.getOpen();
-                            double dpriceClose12 = next2Info.getClose();
-                            double dpriceHigh12 = next2Info.getHigh();
-                            double dpriceLow12 = next2Info.getLow();
-                            double dvolumen12 = next2Info.getVol()/1000;
-                            int dPipsCO12 = (int) ((dpriceClose12 + dpriceOpen12) - dpriceOpen12);
-
-                            String priceClose12 = String.valueOf(dpriceClose12 / 100);
-                            String priceOpen12 = String.valueOf(dpriceOpen12 / 100);
-                            String priceHigh12 = String.valueOf(dpriceHigh12 / 100);
-                            String priceLow12 = String.valueOf(dpriceLow12 / 100);
-                            String volumen12 = String.valueOf(dvolumen12);
-                            String pipsCO12 = String.valueOf(dPipsCO12);
+                            double pipsclose1 = next1Info.getClose() + next1Info.getOpen();
+                            double pipsopen1 = next1Info.getOpen();
                             
-                            double dpriceOpen123 = next3Info.getOpen();
-                            double dpriceClose123 = next3Info.getClose();
-                            double dpriceHigh123 = next3Info.getHigh();
-                            double dpriceLow123 = next3Info.getLow();
-                            double dvolumen123 = next3Info.getVol()/1000;
-                            int dPipsCO123 = (int) ((dpriceClose123 + dpriceOpen123) - dpriceOpen123);
+                            double pipsclose2 = next2Info.getClose() + next2Info.getOpen();
+                            double pipsopen2 = next2Info.getOpen();
+                            
+                            double pipsclose3 = next3Info.getClose() + next3Info.getOpen();
+                            double pipsopen3  = next3Info.getOpen();
+                            
+                            double pipsclose4 = next4Info.getClose() + next4Info.getOpen();
+                            double pipsopen4 = next4Info.getOpen();
+                            
+                            double pipsclose5 = next5Info.getClose() + next5Info.getOpen();
+                            double pipsopen5 = next5Info.getOpen();
 
-                            String priceClose123 = String.valueOf(dpriceClose123 / 100);
-                            String priceOpen123 = String.valueOf(dpriceOpen123 / 100);
-                            String priceHigh123 = String.valueOf(dpriceHigh123 / 100);
-                            String priceLow123 = String.valueOf(dpriceLow123 / 100);
-                            String volumen123 = String.valueOf(dvolumen123);
-                            String pipsCO123 = String.valueOf(dPipsCO123);
+                            String pips1Close = String.valueOf(pipsclose1);
+                            String pips1Open=String.valueOf(pipsopen1);
+                            
+                            String pips2Close = String.valueOf(pipsclose2);
+                            String pips2Open=String.valueOf(pipsopen2);
+                            
+                            String pips3Close = String.valueOf(pipsclose3);
+                            String pips3Open=String.valueOf(pipsopen3);
+                            
+                            String pips4Close = String.valueOf(pipsclose4);
+                            String pips4Open=String.valueOf(pipsopen4);
+                            
+                           String pips5Close = String.valueOf(pipsclose5);
+                            String pips5Open=String.valueOf(pipsopen5);
+                            
 
-//                            double dpriceOpen123 = RateInfoRecord.get(i + 3).getOpen();
-//                            double dpriceClose123 = RateInfoRecord.get(i + 3).getClose();
-//                            double dpriceHigh123 = RateInfoRecord.get(i + 3).getHigh();
-//                            double dpriceLow123 = RateInfoRecord.get(i + 3).getLow();
-//                            double dvolumen123 = RateInfoRecord.get(i + 3).getVol();
-//                            int dPipsCO123 = (int) ((dpriceClose123 + dpriceOpen123) - dpriceOpen123);
-//
-//                            String priceClose123 = String.valueOf(dpriceClose123 / 100);
-//                            String priceOpen123 = String.valueOf(dpriceOpen123 / 100);
-//                            String priceHigh123 = String.valueOf(dpriceHigh123 / 100);
-//                            String priceLow123 = String.valueOf(dpriceLow123 / 100);
-//                            String volumen123 = String.valueOf(dvolumen123);
-//                            String pipsCO123 = String.valueOf(dPipsCO123);
-//                            
-//                            double dpriceOpen1234 = RateInfoRecord.get(i + 4).getOpen();
-//                            double dpriceClose1234 = RateInfoRecord.get(i + 4).getClose();
-//                            double dpriceHigh1234 = RateInfoRecord.get(i + 4).getHigh();
-//                            double dpriceLow1234 = RateInfoRecord.get(i + 4).getLow();
-//                            double dvolumen1234 = RateInfoRecord.get(i + 4).getVol();
-//                            int dPipsCO1234 = (int) ((dpriceClose1234 + dpriceOpen1234) - dpriceOpen1234);
-//
-//                            String priceClose1234 = String.valueOf(dpriceClose1234 / 100);
-//                            String priceOpen1234 = String.valueOf(dpriceOpen1234 / 100);
-//                            String priceHigh1234 = String.valueOf(dpriceHigh1234 / 100);
-//                            String priceLow1234 = String.valueOf(dpriceLow1234 / 100);
-//                            String volumen1234 = String.valueOf(dvolumen1234);
-//                            String pipsCO1234 = String.valueOf(dPipsCO1234);
-
-
-                            String result = "1";
-                            if (dPipsCO12 <= 0) {
-                                result = "0";
-                            }
-
-                            //String ctm = String.valueOf(RateInfoRecord.get(i).getCtm());
                             try {
 
-//                                if (i % 2 == 0) {
-//                                    myWriter.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
-//                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
-//                                            result);
-//                                    myWriter.write(System.lineSeparator());
-//                                } else {
-//                                    myWriterWal.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
-//                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
-//                                            result);
-//                                            myWriterWal.write(System.lineSeparator());
-//                                }
-                                if (i % 2 == 0) {
-                                    myWriter.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
- //                                           priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
-                                            result);
+                                if (i > (RateInfoRecord.size() / 2)) {
+
+                                    myWriter.write(pips1Close+separator +pips1Open+ separator + 
+                                            pips2Close+separator +pips2Open+ separator +
+                                            pips3Close+separator +pips3Open+ separator +
+                                            pips4Close+separator +pips4Open+ separator +
+                                            pips5Open+ separator );
                                     myWriter.write(System.lineSeparator());
                                 } else {
-                                    myWriterWal.write(priceHigh1 + separator + priceClose1 + separator + priceLow1 + separator +volumen1+separator+
-//                                            priceHigh12 + separator + priceClose12 + separator + priceLow12 + separator +volumen12+separator+
-                                            result);
-                                            myWriterWal.write(System.lineSeparator());
+
+                                    myWriterWal.write(pips1Close+separator +pips1Open+ separator + 
+                                            pips2Close+separator +pips2Open+ separator +
+                                            pips3Close+separator +pips3Open+ separator +
+                                            pips4Close+separator +pips4Open+ separator +
+                                            pips5Open+ separator );
+                                    myWriterWal.write(System.lineSeparator());
                                 }
 
                             } catch (IOException e) {

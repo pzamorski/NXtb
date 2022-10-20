@@ -37,8 +37,8 @@ public class NetworkNeural {
     private int numberInput;
     private int numberOutput;
     private final int MaxIterations = 12000;
-    private final double LearningRate = 0.9;
-    private final double MaxError = 0.0001;
+    private final double LearningRate = 0.001;
+    private final double MaxError = 0.00001;
     private DataSet dataSet;
     private DataSet waldationdataSet;
     private String fileNameWeight;
@@ -53,6 +53,9 @@ public class NetworkNeural {
     private int n2;
     Average av;
 
+    double datamax = -9999.0D;
+    double datamin = 9999.0D;
+
     private MultiLayerPerceptron network;
 
     public void setFileToTraining(int numberInput, int numberOutput, String fileName) {
@@ -61,6 +64,7 @@ public class NetworkNeural {
         this.inputFileName = "data/" + fileName + ".txt";
         this.walidationinputFileName = "data/" + fileName + "_Walidation.txt";
         this.fileNameWeight = fileName;
+
     }
 
     public void setListener(LearningListener learningListener) {
@@ -86,8 +90,8 @@ public class NetworkNeural {
         // train the network with training set
         DynamicBackPropagation db = new DynamicBackPropagation();
 
-//        db.setMomentumChange(100000);
-//        db.setMaxMomentum(100000);
+        db.setMomentumChange(10000000);
+        db.setMaxMomentum(100000);
         network.setLearningRule(db);
 
         network.getLearningRule().setLearningRate(LearningRate);
@@ -95,6 +99,7 @@ public class NetworkNeural {
         network.getLearningRule().setMaxIterations(MaxIterations);
 
         network.save("data.nnet");
+        
 
     }
 
@@ -168,20 +173,25 @@ public class NetworkNeural {
         Scanner in = new Scanner(System.in);
 
         for (int i = 0; i < 10; i++) {
-    
-            System.out.println("Help: priceHigh1 priceClose1  priceLow1 volumen1/1000 priceHigh12 priceClose12 priceLow12 volumen12/1000");
 
+            System.out.println("Help: pips1 pips2 pips3 pips4");
+            
+            String[] execut = in.nextLine().split("\t");
+            
             for (int y = 0; y != numberInput; y++) {
 
-                System.out.print("Podaj wartość wejscia numer " + (y + 1) + ": ");
-                input[y] = Double.valueOf(in.nextLine());
+               // System.out.print("Podaj wartość wejscia numer " + (y + 1) + ": ");
+                input[y] = Double.valueOf(execut[y]);
+                input[y] = (input[y] - datamin) / datamax;
             }
             network.setInput(input);
             network.calculate();
             out = network.getOutput();
             for (int j = 0; j < out.length; j++) {
 
-                System.out.printf("Wyjście: %d = %.4f \n", j+1,out[0]);
+                double pred = (out[0]) * datamax + datamin;
+
+                System.out.printf("Wyjście: %d = %.4f \n", j + 1, pred);
                 System.out.println("");
             }
         }
@@ -264,15 +274,15 @@ public class NetworkNeural {
         public void handleLearningEvent(LearningEvent event) {
 
             DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
-
-            if (((bp.getCurrentIteration() - 1) % (300) == 0)) {
+int curentIteration=bp.getCurrentIteration();
+            if (((curentIteration - 1) % (100) == 0)) {
                 double Error = bp.getTotalNetworkError();
 
                 double momentum = bp.getMomentum();
                 double changeError = Math.abs(prevError - Error);
                 double avarageChcngeError = av.getAverage(changeError);
 
-                System.out.printf("E: %.6f M: %.0f R: %.0f \n", Error, momentum * 1.0E6, avarageChcngeError * 1.0E10);
+                System.out.printf("I: %d E: %.6f M: %.0f R: %.0f \n", curentIteration,Error, momentum * 1.0E6, avarageChcngeError * 1.0E10);
 
                 if (bp.getTotalNetworkError() < bp.getMaxError()) {
                     treningFalse = true;
@@ -294,7 +304,7 @@ public class NetworkNeural {
             DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
 
             // if (((bp.getCurrentIteration()-1) % (MaxIterations/10) == 0)||((int)(prevError*1.0E3)!=(int)(bp.getTotalNetworkError()*1.0E3))) {
-            if (((bp.getCurrentIteration() - 1) % (4000) == 0)) {
+            if (((bp.getCurrentIteration() - 1) % (bp.getMaxIterations() / 4) == 0)) {
                 double Error = bp.getTotalNetworkError();
                 if (Error <= 0.001) {
                     treningFalse = false;
@@ -333,6 +343,68 @@ public class NetworkNeural {
             prevError = bp.getTotalNetworkError();
 
         }
+
+    }
+
+    public void conwertData() throws IOException {
+
+        System.out.println("Load data");
+        double[] data = null;
+        try {
+            File file = new File(inputFileName);    //creates a new file instance  
+            FileReader fr = new FileReader(file);   //reads the file  
+            BufferedReader br = new BufferedReader(fr);  //creates a buffering character input stream  
+            StringBuffer sb = new StringBuffer();    //constructs a string buffer with no characters  
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                sb.append(line);      //appends line to string buffer  
+                sb.append("\n");     //line feed   
+            }
+            fr.close();    //closes the stream and release the resources  
+            String[] arrayTemp = sb.toString().split("\t");
+            data = new double[arrayTemp.length];
+            for (int i = 0; i < arrayTemp.length - 1; i++) {
+
+                data[i] = Double.valueOf(arrayTemp[i]);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        for (int i = 0; i < data.length - 1; i++) {
+
+            if (data[i] > datamax) {
+                datamax = data[i];
+
+            }
+            if (data[i] < datamin) {
+                datamin = data[i];
+            }
+
+        }
+
+        datamax = datamax * 1.2D;
+        datamin = datamin * 0.8D;
+
+        System.out.println("Konwert");
+        FileWriter myWriter = new FileWriter(inputFileName);
+        String separator = "\t";
+        for (int i = 0; i < data.length - 8; i++) {
+            String d0 = String.valueOf((data[i] - datamin) / datamax);
+            String d1 = String.valueOf((data[i + 1] - datamin) / datamax);
+            String d2 = String.valueOf((data[i + 2] - datamin) / datamax);
+            String d3 = String.valueOf((data[i + 3] - datamin) / datamax);
+            String d4 = String.valueOf((data[i + 4] - datamin) / datamax);
+            String d5 = String.valueOf((data[i + 5] - datamin) / datamax);
+            String d6 = String.valueOf((data[i + 6] - datamin) / datamax);
+            String d7 = String.valueOf((data[i + 7] - datamin) / datamax);
+            String d8 = String.valueOf((data[i + 8] - datamin) / datamax);
+            myWriter.write(d0 + separator + d1 + separator + d2 + separator + d3 + separator + d4 + separator + d5 + separator + d6 + separator + d7 + separator + d8);
+            myWriter.write(System.lineSeparator());
+        }
+
+        myWriter.close();
 
     }
 
