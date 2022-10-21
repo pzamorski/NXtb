@@ -17,11 +17,13 @@ import pro.xstore.api.message.response.APIErrorResponse;
  * @author warsztat
  */
 public class NXtb {
-
+    
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
         
         String symbol = "KGH.PL";
-        
+        int input = 2;
+        int output = 1;
+        int lernIteration = 200;
 //        int j=1;
 //        for (int i = 0; i < 1000; i++) {
 //            if(i%20==0){j++;}
@@ -32,34 +34,36 @@ public class NXtb {
 //        }
 //        
 
-        XtbApi xtbApi = new XtbApi();
-                    xtbApi.login();
-                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 12990000000L);
-                    xtbApi.logout();
-         
+//        XtbApi xtbApi = new XtbApi();
+//                    xtbApi.login();
+//                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 1990000000L);
+//                    xtbApi.logout();
+        double averageOutput = 0;
         
-        
-                NetworkN n = new NetworkN(8, 1000,500, 1);
-        n.setFileDataTrennig(symbol);
-        n.setLearningRate(0.0001);
-        n.setMaxError(0.00001);
-        n.setMaxIteration(1200000);
-        n.setMomentumChange();
-        n.setMaxMomentum();
-        n.getLernData();
+        for (int i = 1; i < lernIteration; i++) {
+            
+            NetworkN n = new NetworkN(input, 2 *i+ input,i, output);
+            n.setFileDataTrennig(symbol);
+            n.setLearningRate(0.01);
+            n.setMaxError(0.001);
+            n.setMaxIteration(20000);
+            n.setMomentumChange(100);
+            n.setMaxMomentum(100);
+            
+            n.getLernData();
+            try {
+                
+                n.lern(false);
+            } catch (Exception e) {
+                n.reset();
+            }
 
-        try {
-            n.lern();
-        } catch (Exception e) {
-            n.reset();
+            // n.selfTest();
+            averageOutput = averageOutput + n.inputScaner("9240,9248", 0);
+            
         }
-
-        n.selfTest();
         
-        
-        
-        
-        
+        System.out.println("Srednia z " + lernIteration + " wyników: " + (averageOutput / lernIteration));
 
 //        int l1 = 2, l2 = 0;
 //
@@ -204,12 +208,10 @@ public class NXtb {
 //        }
 //        System.exit(0);
     }
-
-    public void createNetwork(String symbol , int n1,int n2) {
-
+    
+    public void createNetwork(String symbol, int n1, int n2) {
         
-
-        NetworkN n = new NetworkN(8, n1,n2, 1);
+        NetworkN n = new NetworkN(8, n1, n2, 1);
         n.setFileDataTrennig(symbol);
         n.setLearningRate(0.0001);
         n.setMaxError(0.000001);
@@ -217,19 +219,18 @@ public class NXtb {
         n.setMomentumChange(100);
         n.setMaxMomentum(100);
         n.getLernData();
-
+        
         try {
             n.lern();
         } catch (Exception e) {
             n.reset();
         }
-
+        
         n.selfTest();
     }
-        public void createNetwork(String symbol , int n1) {
-
+    
+    public void createNetwork(String symbol, int n1) {
         
-
         NetworkN n = new NetworkN(8, n1, 1);
         n.setFileDataTrennig(symbol);
         n.setLearningRate(0.0001);
@@ -238,13 +239,13 @@ public class NXtb {
         n.setMomentumChange(100);
         n.setMaxMomentum(100);
         n.getLernData();
-
+        
         try {
             n.lern();
         } catch (Exception e) {
             n.reset();
         }
-
+        
         n.selfTest();
     }
 }
