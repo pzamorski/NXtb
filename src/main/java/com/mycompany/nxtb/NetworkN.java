@@ -4,23 +4,18 @@
  */
 package com.mycompany.nxtb;
 
-import com.mycompany.nxtb.NetworkNeural.LearningListener;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.neuroph.core.NeuralNetwork;
 import org.neuroph.core.data.DataSet;
 import org.neuroph.core.data.DataSetRow;
 import org.neuroph.core.events.LearningEvent;
 import org.neuroph.core.events.LearningEventListener;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.DynamicBackPropagation;
-import org.neuroph.core.learning.LearningRule;
-import org.neuroph.nnet.learning.BackPropagation;
 
 /**
  *
@@ -33,8 +28,8 @@ public class NetworkN extends MultiLayerPerceptron {
     String symbolName, symbolNameWalidation, symbolNameWeights, symbolNameConf;
     String separator = ",";
     String fileConf = "conf.txt";
-
-    Boolean SaveWeigts = false;
+    String fileO, fileC, fileH, fileL, fileV;
+    String fileNameArray[] = new String[4];
 
     double datamax;
     double datamin;
@@ -151,6 +146,43 @@ public class NetworkN extends MultiLayerPerceptron {
         this.symbolNameWalidation = "data/" + symbolName + "/" + symbolName + "_walidation.txt";
         this.symbolNameWeights = "data/" + symbolName + "/" + symbolName + "_weights.txt";
         this.symbolNameConf = "data/" + symbolName + "/" + symbolName + "_conf.txt";
+
+        this.fileC = "data/" + symbolName + "/" + symbolName + "C.txt";
+        this.fileH = "data/" + symbolName + "/" + symbolName + "H.txt";
+        this.fileL = "data/" + symbolName + "/" + symbolName + "L.txt";
+        this.fileO = "data/" + symbolName + "/" + symbolName + "O.txt";
+        this.fileV = "data/" + symbolName + "/" + symbolName + "V.txt";
+
+        fileNameArray[0] = this.fileO;
+        fileNameArray[1] = this.fileC;
+        fileNameArray[2] = this.fileH;
+        fileNameArray[3] = this.fileL;
+        //fileNameArray[4]=this.fileV;
+
+    }
+
+    public String getFileO() {
+        return fileO;
+    }
+
+    public String getFileC() {
+        return fileC;
+    }
+
+    public String getFileH() {
+        return fileH;
+    }
+
+    public String getFileL() {
+        return fileL;
+    }
+
+    public String getFileV() {
+        return fileV;
+    }
+
+    public String getFileNameArray(int index) {
+        return fileNameArray[index];
     }
 
     public void setInput(int input) {
@@ -193,15 +225,12 @@ public class NetworkN extends MultiLayerPerceptron {
 
     public void lern() {
 
-        
-        
         this.randomizeWeights();
         this.setWeight();
         addListener(new LerningListenerDynamicBackProbagation());
 
         super.learn(dataSet);
 
-        
     }
 
     public void lern(boolean withBackup) {
@@ -229,9 +258,9 @@ public class NetworkN extends MultiLayerPerceptron {
         }
     }
 
-    public void getLernData() {
+    public void getLernDataTimeSeries(String nameFile) {
 
-        double[] data = new Memory().loadDouble(symbolName);
+        double[] data = new Memory().loadDouble(nameFile);
         datamax = -9999.0D;
         datamin = 9999.0D;
 
@@ -261,6 +290,45 @@ public class NetworkN extends MultiLayerPerceptron {
             double[] buffOutput = new double[output];
             for (int j = 0; j < output; j++) {
                 buffOutput[j] = (data[input + i + j] - datamin) / datamax;
+            }
+
+            dataSet.add(buffInput, buffOutput);
+        }
+
+    }
+
+    public void getLernDataSegmen() {
+
+        double[] data = new Memory().loadDouble(symbolName);
+        datamax = -9999.0D;
+        datamin = 9999.0D;
+
+        for (int i = 0; i < data.length - 1; i++) {
+
+            if (data[i] > datamax) {
+                datamax = data[i];
+
+            }
+            if (data[i] < datamin) {
+                datamin = data[i];
+            }
+        }
+
+        datamax = datamax * 1.2D;
+        datamin = datamin * 0.8D;
+
+        dataSet = new DataSet(input, output);
+
+        for (int i = 0; i < data.length - (i + input + output); i = i + input + output) {
+
+            double[] buffInput = new double[input];
+            double[] buffOutput = new double[output];
+            for (int j = 0; j < input; j++) {
+                buffInput[j] = (data[i + j] - datamin) / datamax;
+            }
+
+            for (int j = 0; j < output; j++) {
+                buffOutput[j] = (data[i + input] - datamin) / datamax;
             }
 
             dataSet.add(buffInput, buffOutput);
@@ -307,7 +375,6 @@ public class NetworkN extends MultiLayerPerceptron {
         double[] out = new double[this.output];
         double pred = 0;
 
-
         String[] execut = in.split(",");
 
         for (int y = 0; y != this.input; y++) {
@@ -323,7 +390,31 @@ public class NetworkN extends MultiLayerPerceptron {
 
             pred = (out[indexOutput]) * datamax + datamin;
 
-            System.out.printf("%s out:-> %.4f \n\n",Arrays.toString(neuronsInLayers), pred);
+            System.out.printf("%s out:-> %.4f \n", Arrays.toString(neuronsInLayers), pred);
+        }
+        return pred;
+
+    }
+
+    public double inputScaner(double[] in, int indexOutput) {
+
+        double[] input = new double[this.input];
+        double[] out = new double[this.output];
+        double pred = 0;
+
+        for (int y = 0; y != this.input; y++) {
+
+            // System.out.print("Podaj wartość wejscia numer " + (y + 1) + ": ");
+            in[y] = (in[y] - datamin) / datamax;
+        }
+        this.setInput(input);
+        this.calculate();
+        out = this.getOutput();
+        for (int j = 0; j < out.length; j++) {
+
+            pred = (out[indexOutput]) * datamax + datamin;
+
+            System.out.printf("%s out:-> %.4f \n", Arrays.toString(neuronsInLayers), pred);
         }
         return pred;
 
@@ -377,7 +468,6 @@ public class NetworkN extends MultiLayerPerceptron {
             networkOutput[0] = (networkOutput[0] * datamax + datamin);
             double desiredNetworkOutput = (testSetRow.getDesiredOutput()[0] * datamax + datamin);
 
-//            System.out.print("In: " + Arrays.toString(testSetRow.getInput()));
             if (networkOutput[0] > desiredNetworkOutput) {
                 r = networkOutput[0] - desiredNetworkOutput;
             } else {
@@ -385,8 +475,6 @@ public class NetworkN extends MultiLayerPerceptron {
             }
 
             err = err + r;
-
-//                 System.out.printf("I: %d  NO: %.0f DO: %.0f  r: %.0f \n", iloscProbek,networkOutput[0], desiredNetworkOutput, r);
         }
         err = err / iloscProbek;
         System.out.println("err: " + err);
@@ -401,17 +489,13 @@ public class NetworkN extends MultiLayerPerceptron {
 
             DynamicBackPropagation bp = (DynamicBackPropagation) event.getSource();
             int curentIteration = bp.getCurrentIteration();
-            if (curentIteration % 5 == 0||curentIteration  == 1) {
-            double Error = bp.getTotalNetworkError();
+            if (curentIteration % 5000 == 0 || curentIteration == 1) {
+                double Error = bp.getTotalNetworkError();
 
-           
-
-            System.out.printf("I: %d/%d E: %.6f/%.6f M: %.0f/%.0f \n", curentIteration,bp.getMaxIterations(), bp.getTotalNetworkError(),bp.getMaxError(), bp.getMomentum() * 1.0E6,bp.getMaxMomentum()* 1.0E6);
+                System.out.printf("I: %d/%d E: %.6f/%.6f M: %.0f/%.0f \n", curentIteration, bp.getMaxIterations(), bp.getTotalNetworkError(), bp.getMaxError(), bp.getMomentum() * 1.0E6, bp.getMaxMomentum() * 1.0E6);
 
             }
         }
     }
-    
-    
 
 }

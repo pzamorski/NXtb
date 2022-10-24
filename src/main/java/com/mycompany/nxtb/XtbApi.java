@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import netscape.javascript.JSObject;
 import pro.xstore.api.message.codes.PERIOD_CODE;
 import pro.xstore.api.message.codes.TRADE_OPERATION_CODE;
@@ -38,29 +40,32 @@ public class XtbApi {
 
     String mySymbol;
 
-    private long id = 13818197L;
-    private String password = "Abrakadabra22";
-    private SyncAPIConnector connector;
+    private final long id = 13818197L;
+    private final String password = "Abrakadabra22";
+    private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
     private double[] actualPrice = new double[3];
 
     public boolean login() throws APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse, IOException {
-        Credentials credentials = new Credentials(id, password);
-        loginResponse = APICommandFactory.executeLoginCommand(
-                connector, // APIConnector
-                credentials // Credentials
-        );
-
+        if (checkIsLogin() == false) {
+            Credentials credentials = new Credentials(id, password);
+            loginResponse = APICommandFactory.executeLoginCommand(
+                    connector, // APIConnector
+                    credentials // Credentials
+            );
+        }
         return checkIsLogin();
     }
 
     public boolean login(long id, String password) throws APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse, IOException {
-        Credentials credentials = new Credentials(id, password);
-        loginResponse = APICommandFactory.executeLoginCommand(
-                connector, // APIConnector
-                credentials // Credentials
-        );
+        if (checkIsLogin() == false) {
+            Credentials credentials = new Credentials(id, password);
+            loginResponse = APICommandFactory.executeLoginCommand(
+                    connector, // APIConnector
+                    credentials // Credentials
+            );
+        }
 
         return checkIsLogin();
     }
@@ -72,10 +77,14 @@ public class XtbApi {
     }
 
     public boolean checkIsLogin() {
-        if (loginResponse.getStatus() == true) {
-            System.out.println("Zalogowany");
+        boolean stuts = false;
+        if (loginResponse != null) {
+            if (loginResponse.getStatus() == true) {
+                System.out.println("Zalogowany");
+                stuts = true;
+            }
         }
-        return loginResponse.getStatus();
+        return stuts;
     }
 
     public String getLastSymbol() {
@@ -83,92 +92,63 @@ public class XtbApi {
     }
 
     public void getCandlesOfTime(String mySymbol, PERIOD_CODE period_code, long time) {
+
         try {
 
             if (loginResponse.getStatus() == true) {
                 lastSymbol = mySymbol;
 
                 AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
-                ServerTimeResponse serverTime = APICommandFactory.executeServerTimeCommand(connector);
 
                 System.out.print("...");
 
+                FileWriter myWriterO = null;
+                FileWriter myWriterC = null;
+                FileWriter myWriterH = null;
+                FileWriter myWriterL = null;
+                FileWriter myWriterV = null;
                 FileWriter myWriter = null;
+
                 FileWriter myWriterWal = null;
 //                 List all available symbols on console
                 String separator = ",";
                 for (SymbolRecord symbol : availableSymbols.getSymbolRecords()) {
-                    // System.out.println("-> " + symbol.getSymbol() + " Ask: " + symbol.getAsk() + " Bid: " + symbol.getBid());
-                    ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), period_code, serverTime.getTime() - time);
-                    List<RateInfoRecord> RateInfoRecord = chartLastCommand.getRateInfos();
+                    ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), period_code, time);
+                    List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
+                    System.out.println(symbol.getSymbol());
+                    if (!rateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
+                        myWriterO = new FileWriter("data/" + mySymbol + "/" + mySymbol + "O.txt");
+                        myWriterC = new FileWriter("data/" + mySymbol + "/" + mySymbol + "C.txt");
+                        myWriterH = new FileWriter("data/" + mySymbol + "/" + mySymbol + "H.txt");
+                        myWriterL = new FileWriter("data/" + mySymbol + "/" + mySymbol + "L.txt");
+                        myWriterV = new FileWriter("data/" + mySymbol + "/" + mySymbol + "V.txt");
+                        myWriter = new FileWriter("data/" + mySymbol + "/" + mySymbol + ".txt");
 
-                    if (!RateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
-                        myWriter = new FileWriter("data/"+mySymbol+"/" + mySymbol + ".txt");
-                        myWriterWal = new FileWriter("data/"+mySymbol+"/" + mySymbol + "_Walidation.txt");
+                        myWriterWal = new FileWriter("data/" + mySymbol + "/" + mySymbol + "_Walidation.txt");
                         System.out.print(symbol.getSymbol() + " - zapis ");
 
                         System.out.print("...");
                         int i = 0;
 
-                        for (i = 0; i < RateInfoRecord.size() - 4; i++) {
+                        for (i = 0; i < rateInfoRecord.size()-1; i++) {
 
-                            RateInfoRecord next1Info = RateInfoRecord.get(i);
-                            RateInfoRecord next2Info = RateInfoRecord.get(i + 1);
-                            RateInfoRecord next3Info = RateInfoRecord.get(i + 2);
-                            RateInfoRecord next4Info = RateInfoRecord.get(i + 3);
-                            RateInfoRecord next5Info = RateInfoRecord.get(i + 4);
-
-                            double pipsclose1 = next1Info.getClose() + next1Info.getOpen();
-                            double pipsopen1 = next1Info.getOpen();
-                            
-                            double pipsclose2 = next2Info.getClose() + next2Info.getOpen();
-                            double pipsopen2 = next2Info.getOpen();
-                            
-                            double pipsclose3 = next3Info.getClose() + next3Info.getOpen();
-                            double pipsopen3  = next3Info.getOpen();
-                            
-                            double pipsclose4 = next4Info.getClose() + next4Info.getOpen();
-                            double pipsopen4 = next4Info.getOpen();
-                            
-                            double pipsclose5 = next5Info.getClose() + next5Info.getOpen();
-                            double pipsopen5 = next5Info.getOpen();
-
-                            String pips1Close = String.valueOf(pipsclose1);
-                            String pips1Open=String.valueOf(pipsopen1);
-                            
-                            String pips2Close = String.valueOf(pipsclose2);
-                            String pips2Open=String.valueOf(pipsopen2);
-                            
-                            String pips3Close = String.valueOf(pipsclose3);
-                            String pips3Open=String.valueOf(pipsopen3);
-                            
-                            String pips4Close = String.valueOf(pipsclose4);
-                            String pips4Open=String.valueOf(pipsopen4);
-                            
-                           String pips5Close = String.valueOf(pipsclose5);
-                            String pips5Open=String.valueOf(pipsopen5);
-                            
+                            Candle candle = new Candle(rateInfoRecord.get(i));
+                            Candle candleNext = new Candle(rateInfoRecord.get(i+1));
 
                             try {
-
-                                if (i > (RateInfoRecord.size() / 2)) {
-
-                                    myWriter.write(pips1Close+separator +pips1Open+ separator + 
-                                            pips2Close+separator +pips2Open+ separator +
-                                            pips3Close+separator +pips3Open+ separator +
-                                            pips4Close+separator +pips4Open+ separator +
-                                            pips5Open+ separator );
-                                    myWriter.write(System.lineSeparator());
-                                } else {
-
-                                    myWriterWal.write(pips1Close+separator +pips1Open+ separator + 
-                                            pips2Close+separator +pips2Open+ separator +
-                                            pips3Close+separator +pips3Open+ separator +
-                                            pips4Close+separator +pips4Open+ separator +
-                                            pips5Open+ separator );
-                                    myWriterWal.write(System.lineSeparator());
-                                }
-
+                                myWriterO.write(candle.getOpenString() + separator);//dla ciagow czasowych
+                                myWriterC.write(candle.getCloseString() + separator);
+                                myWriterH.write(candle.getHighString() + separator);
+                                myWriterL.write(candle.getLowString() + separator);
+                                myWriterV.write(candle.getVolString() + separator);
+                                
+                                myWriter.write(candle.getOpenString() + separator + //wejsca
+                                        candle.getCloseString() + separator+
+                                        candle.getHighString()+separator+
+                                        candle.getLowString()+separator+
+                                        candleNext.getCloseString()+separator+//wyjscie
+                                        System.lineSeparator());
+                                
                             } catch (IOException e) {
                                 System.out.println("error");
                                 e.printStackTrace();
@@ -176,9 +156,13 @@ public class XtbApi {
 
                         }
 
+                        myWriterO.close();
+                        myWriterC.close();
+                        myWriterH.close();
+                        myWriterL.close();
+                        myWriterV.close();
                         myWriter.close();
-                        myWriterWal.close();
-                        System.out.print(" OK" + "[" + i + "]");
+                        System.out.print(" OK" + "[" + rateInfoRecord.size() + "]");
                         System.out.println("");
                         break;//słaby internet do usuniecia
                     }
@@ -283,6 +267,23 @@ public class XtbApi {
         } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
 
+    }
+
+    public long getServerTime() {
+        ServerTimeResponse serverTime = null;
+        try {
+            serverTime = APICommandFactory.executeServerTimeCommand(connector);
+
+        } catch (APICommandConstructionException ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (APICommunicationException ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (APIReplyParseException ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (APIErrorResponse ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return serverTime.getTime();
     }
 
 }

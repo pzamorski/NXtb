@@ -5,7 +5,14 @@
 package com.mycompany.nxtb;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import pro.xstore.api.message.codes.PERIOD_CODE;
 import pro.xstore.api.message.error.APICommandConstructionException;
 import pro.xstore.api.message.error.APICommunicationException;
@@ -17,235 +24,141 @@ import pro.xstore.api.message.response.APIErrorResponse;
  * @author warsztat
  */
 public class NXtb {
-    
+
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
-        
-        String symbol = "KGH.PL";
-        int input = 2;
+
+        int input = 4;
         int output = 1;
-        int lernIteration = 200;
-//        int j=1;
-//        for (int i = 0; i < 1000; i++) {
-//            if(i%20==0){j++;}
-//            System.out.println(j+" ");
-//            System.out.print(i+": ");
-//          new NXtb().createNetwork(symbol,1000); 
-//            System.out.println();
-//        }
-//        
+        int lernIteration = 100;
 
-//        XtbApi xtbApi = new XtbApi();
-//                    xtbApi.login();
-//                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 1990000000L);
-//                    xtbApi.logout();
+        int step = 0;
+
+        String symbol = "KGH.PL";
+        StringBuilder buf = new StringBuilder();
+        String commend = null;
+
         double averageOutput = 0;
-        
-        for (int i = 1; i < lernIteration; i++) {
-            
-            NetworkN n = new NetworkN(input, 2 *i+ input,i, output);
-            n.setFileDataTrennig(symbol);
-            n.setLearningRate(0.01);
-            n.setMaxError(0.001);
-            n.setMaxIteration(20000);
-            n.setMomentumChange(100);
-            n.setMaxMomentum(100);
-            
-            n.getLernData();
-            try {
-                
-                n.lern(false);
-            } catch (Exception e) {
-                n.reset();
+
+        Scanner in = new Scanner(System.in);
+
+        NetworkN networkMaster = null;
+        NetworkN[] n = new NetworkN[5];
+
+        System.out.println("get-Pobierz swieczki");
+        System.out.println("lern-Wyszkol siec");
+        System.out.println("insert [data]-insert " + input + " input");
+        System.out.println("exit");
+        System.out.print(">>");
+
+        String[] execut = in.nextLine().split(" ");
+
+        args = new String[execut.length];
+        args = execut;
+
+        for (int i = 0; i < args.length; i++) {
+            commend = args[i];
+            switch (commend) {
+                case "get" -> {
+                    XtbApi xtbApi = new XtbApi();
+                    xtbApi.login();
+
+                    Date dateRange = new Date(new TimeRange().getRange(new Date().getTime(), 3));
+                    System.out.println("Download data: " + dateRange);
+                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, dateRange.getTime());
+                    xtbApi.logout();
+                }
+                case "lern" -> {
+                    for (int j = 0; j < n.length - 1; j++) {
+
+                        System.out.println("Network: " + j);
+
+                        averageOutput = 0;
+                        for (int k = 1; k < lernIteration; k++) {
+                            n[j] = new NetworkN(input, 3 * input + 2, output);
+                            n[j].setFileDataTrennig(symbol);
+                            n[j].setLearningRate(0.003);
+                            n[j].setMaxError(0.0001);
+                            n[j].setMaxIteration(120000);
+                            n[j].setMomentumChange(10);
+                            n[j].setMaxMomentum(10);
+                            n[j].getLernDataTimeSeries(n[j].fileNameArray[j]);
+                            try {
+
+                                n[j].lern(false);
+                            } catch (Exception e) {
+                                n[j].reset();
+                            }
+                            //n.selfTest();
+//                            if (args.length - 1 > i) {
+//                                averageOutput = averageOutput + n[j].inputScaner(args[i + 1], 0);
+//                            }
+                        }
+//                        if (args.length - 1 > i) {
+//                            System.out.println("Srednia wyjscia: " + averageOutput);
+//                        }
+                    }
+                    //network master
+                    for (int j = 0; j < 10; j++) {
+
+                        System.out.println("Network master");
+                        networkMaster = new NetworkN(input, 4 * input + 2, output);
+                        networkMaster.setFileDataTrennig(symbol);
+                        networkMaster.setLearningRate(0.003);
+                        networkMaster.setMaxError(0.00001);
+                        networkMaster.setMaxIteration(120000);
+                        networkMaster.setMomentumChange(10);
+                        networkMaster.setMaxMomentum(10);
+                        networkMaster.getLernDataSegmen();
+                        try {
+
+                            networkMaster.lern(false);
+                        } catch (Exception e) {
+                            networkMaster.reset();
+                        }
+
+                        double out = networkMaster.inputScaner(new double[]{
+                            n[0].inputScaner("91.1,91.46,90.74,90.28", 0),
+                            n[1].inputScaner("91.46,90.74,90.26,90.52", 0),
+                            n[2].inputScaner("91.7,92.3,90.86,90.94", 0),
+                            n[3].inputScaner("90.06,90.52,89.96,90.1", 0),}, 0);                        
+                        averageOutput=averageOutput+out;
+
+                    }
+                    System.out.println("Master out: " + averageOutput/10);
+                }
+                case "insert" -> {
+                    if (args.length - 1 > i && networkMaster != null) {
+                        System.out.println("output: " + networkMaster.inputScaner(args[i + 1], 0));
+                    } else {
+                        System.out.println("Brak danych wejsciowych lub sieć nie wyszkolona");
+                    }
+                }
+                case "insert2" -> {
+//                    fileNameArray[0] = this.fileO;
+//                    fileNameArray[1] = this.fileC;
+//                    fileNameArray[2] = this.fileH;
+//                    fileNameArray[3] = this.fileL;
+                    double out = networkMaster.inputScaner(new double[]{
+                        n[0].inputScaner("91.1,91.46,90.74,90.28", 0),
+                        n[1].inputScaner("91.46,90.74,90.26,90.52", 0),
+                        n[2].inputScaner("91.7,92.3,90.86,90.94", 0),
+                        n[3].inputScaner("90.06,90.52,89.96,90.1", 0),}, 0);
+                    System.out.println("Master out: " + out);
+                }
+                case "reset" -> {
+                }
+                case "load" -> {
+                }
+                case "exit" ->
+                    System.exit(0);
+                case "conwert" -> {
+                }
+                default -> {
+
+                }
             }
+        }
+        System.exit(0);
+    }
 
-            // n.selfTest();
-            averageOutput = averageOutput + n.inputScaner("9240,9248", 0);
-            
-        }
-        
-        System.out.println("Srednia z " + lernIteration + " wyników: " + (averageOutput / lernIteration));
-
-//        int l1 = 2, l2 = 0;
-//
-//        String symbol = "KGH.PL";
-//        int Interval = 12000;
-//        XtbApi xtbApi;
-//        NetworkNeural nn = new NetworkNeural();
-//
-//
-//        nn.setFileToTraining(8, 1, symbol);
-//
-//        String commend = null;
-//        Scanner in = new Scanner(System.in);
-//
-//        if (args.length == 0) {
-//
-//            System.out.println("get-Pobierz swieczki");
-//            System.out.println("conf-manual setlayer");
-//            System.out.println("lern-Trening sieci");
-//            System.out.println("find-Szukanie optymalnej sieci");
-//            System.out.println("test-Sprawność sieci");
-//            System.out.println("insert-Podaj dane");
-//            System.out.println("reset-Reset wag");
-//            System.out.println("load-Załadowanie wag");
-//            System.out.println("conwer-kompresja danych");
-//            System.out.println("exit");
-//            System.out.print(">>");
-//
-//            String[] execut = in.nextLine().split(" ");
-//            args = new String[execut.length];
-//            args = execut;
-//
-//        }
-//
-//        for (int i = 0; i < args.length; i++) {
-//            commend = args[i];
-//
-//            switch (commend) {
-//                case "get":
-//        XtbApi xtbApi = new XtbApi();
-//                    xtbApi.login();
-//                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, 12990000000L);
-//                    xtbApi.logout();
-//                    break;
-//                case "conf":
-//                    if (args.length > 1) {
-//                        l1 = Integer.valueOf(args[i + 1]);
-//                        if (args.length > 2) {
-//                            l2 = Integer.valueOf(args[i + 2]);
-//                        }
-//
-//                    } else {
-//                        System.out.print("Set layer: ");
-//                        l1 = Integer.valueOf(in.nextLine());
-//                        l2 = Integer.valueOf(in.nextLine());
-//
-//                    }
-//                    nn.setLayer(l1, l2);
-//                    break;
-//                case "lern":
-//                    if (args.length > 1) {
-//                        l1 = Integer.valueOf(args[i + 1]);
-//                        if (args.length > 2) {
-//                            l2 = Integer.valueOf(args[i + 2]);
-//                        }
-//
-//                    } else {
-//                        System.out.print("Set layer: ");
-//                        l1 = Integer.valueOf(in.nextLine());
-//                        l2 = Integer.valueOf(in.nextLine());
-//
-//                    }
-//                    nn.setLayer(l1, l2);
-//                    System.out.println("Set layer:[" + l1 + "][" + l2 + "]");
-//                    // while (nn.testNeuralNetwork()<=100) {
-//
-//                    nn.startLern();
-//                    nn.saveWeight();
-//
-//                    // }
-//                    break;
-//
-//                case "find":
-//
-//                    System.out.println("Start");
-//                    long jobStart = 0;
-//                    for (int k = 0; k < 75; k++) {
-//
-//                        for (int j = 1; j < 75; j++) {
-//
-//                            System.out.println("Configuracja: [" + (k + j) + "]" + "[" + k + "]");
-//                            nn = new NetworkNeural();
-//                            nn.setFileToTraining(8, 1, symbol);
-//
-//                            nn.setLayer(k + j, k);
-//                            nn.saveWeight();
-//                            nn.loadWeight();
-//                            nn.setInterval(10000);
-//                            jobStart = System.nanoTime();
-//                            while (nn.isTreningFalse() != true) {
-//
-//                                nn.testNeuralNetwork();
-//                                nn.startFind();
-//
-//                                nn.saveWeight();
-//
-//                            } 
-//
-//                            long jobTime = (long) ((System.nanoTime() - jobStart) * 1.0E-9);
-//
-//                            System.out.println("Czas nauki: " + jobTime + "[s] dla konfiguracji: [" + (k + j) + "]" + "[" + k
-//                                    + "] Osiągniety błąd: " + nn.getErrorAverage() + " Sprawność: " + nn.testNeuralNetwork() + " TrenigFalse: " + nn.isTreningFalse());
-//                        }
-//
-//                    }
-//                    System.out.println("Siec wytrenowana");
-//                    break;
-//
-//                case "test":
-//                    
-//                    nn.testNeuralNetwork();
-//                    break;
-//                case "insert":
-//                    nn.loadWeight();
-//                    nn.inputScaner();
-//                    break;
-//                case "reset":
-//                    nn.saveWeight();
-//                    break;
-//                case "load":
-//                    nn.loadWeight();
-//                    break;
-//                case "exit":
-//                    System.exit(0);
-//                    break;
-//                                    case "conwert":
-//                    nn.conwertData();
-//                    break;
-//                default:
-//
-//            }
-//        }
-//        System.exit(0);
-    }
-    
-    public void createNetwork(String symbol, int n1, int n2) {
-        
-        NetworkN n = new NetworkN(8, n1, n2, 1);
-        n.setFileDataTrennig(symbol);
-        n.setLearningRate(0.0001);
-        n.setMaxError(0.000001);
-        n.setMaxIteration(1200000);
-        n.setMomentumChange(100);
-        n.setMaxMomentum(100);
-        n.getLernData();
-        
-        try {
-            n.lern();
-        } catch (Exception e) {
-            n.reset();
-        }
-        
-        n.selfTest();
-    }
-    
-    public void createNetwork(String symbol, int n1) {
-        
-        NetworkN n = new NetworkN(8, n1, 1);
-        n.setFileDataTrennig(symbol);
-        n.setLearningRate(0.0001);
-        n.setMaxError(0.000001);
-        n.setMaxIteration(1200000);
-        n.setMomentumChange(100);
-        n.setMaxMomentum(100);
-        n.getLernData();
-        
-        try {
-            n.lern();
-        } catch (Exception e) {
-            n.reset();
-        }
-        
-        n.selfTest();
-    }
 }
