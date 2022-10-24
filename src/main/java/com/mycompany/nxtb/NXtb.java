@@ -50,11 +50,11 @@ public class NXtb {
         System.out.println("exit");
         System.out.print(">>");
 
-        String[] execut = in.nextLine().split(" ");
-
-        args = new String[execut.length];
-        args = execut;
-
+        if (args.length < 1) {
+            String[] execut = in.nextLine().split(" ");
+            args = new String[execut.length];
+            args = execut;
+        }
         for (int i = 0; i < args.length; i++) {
             commend = args[i];
             switch (commend) {
@@ -120,11 +120,11 @@ public class NXtb {
                             n[0].inputScaner("91.1,91.46,90.74,90.28", 0),
                             n[1].inputScaner("91.46,90.74,90.26,90.52", 0),
                             n[2].inputScaner("91.7,92.3,90.86,90.94", 0),
-                            n[3].inputScaner("90.06,90.52,89.96,90.1", 0),}, 0);                        
-                        averageOutput=averageOutput+out;
+                            n[3].inputScaner("90.06,90.52,89.96,90.1", 0),}, 0);
+                        averageOutput = averageOutput + out;
 
                     }
-                    System.out.println("Master out: " + averageOutput/10);
+                    System.out.println("Master out: " + averageOutput / 10);
                 }
                 case "insert" -> {
                     if (args.length - 1 > i && networkMaster != null) {
