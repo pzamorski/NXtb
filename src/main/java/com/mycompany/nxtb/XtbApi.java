@@ -116,7 +116,7 @@ public class XtbApi {
                     ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), period_code, time);
                     List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
                     System.out.println(symbol.getSymbol());
-                    if (!rateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
+                    if (!rateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol+"asdasf")) {
                         myWriterO = new FileWriter("data/" + mySymbol + "/" + mySymbol + "O.txt");
                         myWriterC = new FileWriter("data/" + mySymbol + "/" + mySymbol + "C.txt");
                         myWriterH = new FileWriter("data/" + mySymbol + "/" + mySymbol + "H.txt");
