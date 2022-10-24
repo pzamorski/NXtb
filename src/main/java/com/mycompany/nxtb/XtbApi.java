@@ -116,7 +116,7 @@ public class XtbApi {
                     ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), period_code, time);
                     List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
                     System.out.println(symbol.getSymbol());
-                    if (!rateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol+"asdasf")) {
+                    if (!rateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
                         myWriterO = new FileWriter("data/" + mySymbol + "/" + mySymbol + "O.txt");
                         myWriterC = new FileWriter("data/" + mySymbol + "/" + mySymbol + "C.txt");
                         myWriterH = new FileWriter("data/" + mySymbol + "/" + mySymbol + "H.txt");
@@ -164,7 +164,7 @@ public class XtbApi {
                         myWriter.close();
                         System.out.print(" OK" + "[" + rateInfoRecord.size() + "]");
                         System.out.println("");
-                        break;//słaby internet do usuniecia
+                        //słaby internet do usuniecia
                     }
 
                 }
