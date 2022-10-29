@@ -31,10 +31,10 @@ public class NXtb {
         int output = 1;
         int lernIteration = 100;
 
-        int step = 0;
-
-        String symbol = "KGH.PL";
-        StringBuilder buf = new StringBuilder();
+        String arraySymbol[] = {"KGH.PL_9","06N.PL","CDR.PL_9"};
+        
+        String symbol = arraySymbol[2];
+        
         String commend = null;
 
         double averageOutput = 0;
@@ -64,7 +64,8 @@ public class NXtb {
 
                     Date dateRange = new Date(new TimeRange().getRange(new Date().getTime(), 3));
                     System.out.println("Download data: " + dateRange);
-                    xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, dateRange.getTime());
+                    xtbApi.getSymbolData(symbol, PERIOD_CODE.PERIOD_H1, dateRange.getTime());
+                    //xtbApi.getCandlesOfTime(symbol, PERIOD_CODE.PERIOD_H1, dateRange.getTime());
                     xtbApi.logout();
                 }
                 case "lern" -> {
@@ -75,36 +76,33 @@ public class NXtb {
                         averageOutput = 0;
                         for (int k = 1; k < lernIteration; k++) {
                             n[j] = new NetworkN(input, 3 * input + 2, output);
-                            n[j].setFileDataTrennig(symbol);
-                            n[j].setLearningRate(0.003);
+                            n[j].setFileDataTrennig(symbol, NetworkType.TYPE_SLAVE[j]);
+                            n[j].setLearningRate(0.001);
                             n[j].setMaxError(0.0001);
                             n[j].setMaxIteration(120000);
                             n[j].setMomentumChange(10);
                             n[j].setMaxMomentum(10);
-                            n[j].getLernDataTimeSeries(n[j].fileNameArray[j]);
+                            n[j].getLernDataTimeSeries();
+                            
                             try {
 
-                                n[j].lern(false);
+                               // n[j].lern(false);
+                                n[j].lernThred();
                             } catch (Exception e) {
                                 n[j].reset();
                             }
-                            //n.selfTest();
-//                            if (args.length - 1 > i) {
-//                                averageOutput = averageOutput + n[j].inputScaner(args[i + 1], 0);
-//                            }
                         }
-//                        if (args.length - 1 > i) {
-//                            System.out.println("Srednia wyjscia: " + averageOutput);
-//                        }
                     }
+//-------------------------------------------------------------------------------
                     //network master
-                    for (int j = 0; j < 10; j++) {
+                    int interationNetworkMaster = 10;
+                    for (int j = 0; j < interationNetworkMaster; j++) {
 
                         System.out.println("Network master");
                         networkMaster = new NetworkN(input, 4 * input + 2, output);
-                        networkMaster.setFileDataTrennig(symbol);
-                        networkMaster.setLearningRate(0.003);
-                        networkMaster.setMaxError(0.00001);
+                        networkMaster.setFileDataTrennig(symbol, NetworkType.TYPE_MASTER[0]);
+                        networkMaster.setLearningRate(0.001);
+                        networkMaster.setMaxError(0.001);
                         networkMaster.setMaxIteration(120000);
                         networkMaster.setMomentumChange(10);
                         networkMaster.setMaxMomentum(10);
@@ -117,14 +115,14 @@ public class NXtb {
                         }
 
                         double out = networkMaster.inputScaner(new double[]{
-                            n[0].inputScaner("91.1,91.46,90.74,90.28", 0),
-                            n[1].inputScaner("91.46,90.74,90.26,90.52", 0),
-                            n[2].inputScaner("91.7,92.3,90.86,90.94", 0),
-                            n[3].inputScaner("90.06,90.52,89.96,90.1", 0),}, 0);
+                            n[0].inputScaner(n[0].getLastSymbol(), 0),
+                            n[1].inputScaner(n[1].getLastSymbol(), 0),
+                            n[2].inputScaner(n[2].getLastSymbol(), 0),
+                            n[3].inputScaner(n[3].getLastSymbol(), 0),}, 0);
                         averageOutput = averageOutput + out;
 
                     }
-                    System.out.println("Master out: " + averageOutput / 10);
+                    System.out.println(symbol+ " price: " + averageOutput / interationNetworkMaster);
                 }
                 case "insert" -> {
                     if (args.length - 1 > i && networkMaster != null) {
@@ -134,20 +132,12 @@ public class NXtb {
                     }
                 }
                 case "insert2" -> {
-//                    fileNameArray[0] = this.fileO;
-//                    fileNameArray[1] = this.fileC;
-//                    fileNameArray[2] = this.fileH;
-//                    fileNameArray[3] = this.fileL;
                     double out = networkMaster.inputScaner(new double[]{
                         n[0].inputScaner("91.1,91.46,90.74,90.28", 0),
                         n[1].inputScaner("91.46,90.74,90.26,90.52", 0),
                         n[2].inputScaner("91.7,92.3,90.86,90.94", 0),
                         n[3].inputScaner("90.06,90.52,89.96,90.1", 0),}, 0);
-                    System.out.println("Master out: " + out);
-                }
-                case "reset" -> {
-                }
-                case "load" -> {
+                    System.out.println(symbol+ " price: " + out);
                 }
                 case "exit" ->
                     System.exit(0);

@@ -14,10 +14,10 @@ import java.io.IOException;
  *
  * @author warsztat
  */
-public  class  Memory {
+public class Memory {
 
-    String separator=",";
-    
+    String separator = ",";
+
     public void save(String src, String data) throws IOException {
         FileWriter myWritter = new FileWriter(src);
         myWritter.write(data);
@@ -35,8 +35,8 @@ public  class  Memory {
         myWritter.close();
 
     }
-    
-        public void save(String src, int [] data) throws IOException {
+
+    public void save(String src, int[] data) throws IOException {
         FileWriter myWritter = new FileWriter(src);
         for (int i = 0; i < data.length; i++) {
             myWritter.write(String.valueOf(data[i]) + separator);
@@ -126,7 +126,5 @@ public  class  Memory {
         }
         return arrayLoad;
     }
-
-
 
 }

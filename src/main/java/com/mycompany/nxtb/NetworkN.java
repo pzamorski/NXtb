@@ -23,16 +23,17 @@ import org.neuroph.nnet.learning.DynamicBackPropagation;
  */
 public class NetworkN extends MultiLayerPerceptron {
 
-    int input, output;
-    int[] neuronsInLayers;
-    String symbolName, symbolNameWalidation, symbolNameWeights, symbolNameConf;
-    String separator = ",";
-    String fileConf = "conf.txt";
-    String fileO, fileC, fileH, fileL, fileV;
-    String fileNameArray[] = new String[4];
+    private int input, output;
+    private int[] neuronsInLayers;
+    private String symbolName, symbolNameWalidation, symbolNameWeights, symbolNameConf;
+    private String separator = ",";
+    private String fileConf = "conf.txt";
+    private String fileO, fileC, fileH, fileL, fileV;
+    public String fileNameArray[] = new String[4];
+    private NetworkType networkType;
 
-    double datamax;
-    double datamin;
+    private double datamax;
+    private double datamin;
 
     DynamicBackPropagation dbp;
 
@@ -141,48 +142,13 @@ public class NetworkN extends MultiLayerPerceptron {
 
     }
 
-    public void setFileDataTrennig(String symbolName) {
-        this.symbolName = "data/" + symbolName + "/" + symbolName + ".txt";
+    public void setFileDataTrennig(String symbolName, String type) {
+        networkType = new NetworkType(type);
+        this.symbolName = networkType.getFileName(symbolName);
+
         this.symbolNameWalidation = "data/" + symbolName + "/" + symbolName + "_walidation.txt";
         this.symbolNameWeights = "data/" + symbolName + "/" + symbolName + "_weights.txt";
         this.symbolNameConf = "data/" + symbolName + "/" + symbolName + "_conf.txt";
-
-        this.fileC = "data/" + symbolName + "/" + symbolName + "C.txt";
-        this.fileH = "data/" + symbolName + "/" + symbolName + "H.txt";
-        this.fileL = "data/" + symbolName + "/" + symbolName + "L.txt";
-        this.fileO = "data/" + symbolName + "/" + symbolName + "O.txt";
-        this.fileV = "data/" + symbolName + "/" + symbolName + "V.txt";
-
-        fileNameArray[0] = this.fileO;
-        fileNameArray[1] = this.fileC;
-        fileNameArray[2] = this.fileH;
-        fileNameArray[3] = this.fileL;
-        //fileNameArray[4]=this.fileV;
-
-    }
-
-    public String getFileO() {
-        return fileO;
-    }
-
-    public String getFileC() {
-        return fileC;
-    }
-
-    public String getFileH() {
-        return fileH;
-    }
-
-    public String getFileL() {
-        return fileL;
-    }
-
-    public String getFileV() {
-        return fileV;
-    }
-
-    public String getFileNameArray(int index) {
-        return fileNameArray[index];
     }
 
     public void setInput(int input) {
@@ -223,13 +189,21 @@ public class NetworkN extends MultiLayerPerceptron {
         dbp.setMaxMomentum(0.9d);
     }
 
+    public void lernThred(){
+       Thread thread = new Thread(() -> {
+           this.lern();
+    });
+    thread.start();
+    
+    }
     public void lern() {
 
         this.randomizeWeights();
         this.setWeight();
         addListener(new LerningListenerDynamicBackProbagation());
-
+        
         super.learn(dataSet);
+
 
     }
 
@@ -258,9 +232,9 @@ public class NetworkN extends MultiLayerPerceptron {
         }
     }
 
-    public void getLernDataTimeSeries(String nameFile) {
+    public void getLernDataTimeSeries() {
 
-        double[] data = new Memory().loadDouble(nameFile);
+        double[] data = new Memory().loadDouble(symbolName);
         datamax = -9999.0D;
         datamin = 9999.0D;
 
@@ -333,6 +307,19 @@ public class NetworkN extends MultiLayerPerceptron {
 
             dataSet.add(buffInput, buffOutput);
         }
+
+    }
+
+    public double[] getLastSymbol() {
+
+        double[] data = new Memory().loadDouble(symbolName);
+        double[] getLastSymbol = new double[4];
+
+        getLastSymbol[0] = data[data.length - 5];
+        getLastSymbol[1] = data[data.length - 4];
+        getLastSymbol[2] = data[data.length - 3];
+        getLastSymbol[3] = data[data.length - 2];
+        return getLastSymbol;
 
     }
 

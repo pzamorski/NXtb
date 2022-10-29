@@ -4,6 +4,7 @@
  */
 package com.mycompany.nxtb;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -40,8 +41,8 @@ public class XtbApi {
 
     String mySymbol;
 
-    private final long id = 13818197L;
-    private final String password = "Abrakadabra22";
+    private final long id = 2345325L;
+    private final String password = "Password";
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
@@ -91,6 +92,103 @@ public class XtbApi {
         return lastSymbol;
     }
 
+    public void getSymbolData(String mySymbol, PERIOD_CODE period_code, long time) {
+
+        try {
+
+            if (loginResponse.getStatus() == true) {
+                lastSymbol = mySymbol;
+
+                AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
+
+                System.out.print("...");
+
+                FileWriter myWriterO = null;
+                FileWriter myWriterC = null;
+                FileWriter myWriterH = null;
+                FileWriter myWriterL = null;
+                FileWriter myWriterV = null;
+                FileWriter myWriter = null;
+
+                FileWriter myWriterWal = null;
+//                 List all available symbols on console
+                String separator = ",";
+                ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, mySymbol, period_code, time);
+                List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
+                if (!rateInfoRecord.isEmpty()) {
+
+                    File dataDir = new File("data/" + mySymbol);
+                    if (!dataDir.exists()) {
+                        dataDir.mkdirs();
+                    }
+
+                    myWriterO = new FileWriter("data/" + mySymbol + "/" + mySymbol + "O.txt");
+                    myWriterC = new FileWriter("data/" + mySymbol + "/" + mySymbol + "C.txt");
+                    myWriterH = new FileWriter("data/" + mySymbol + "/" + mySymbol + "H.txt");
+                    myWriterL = new FileWriter("data/" + mySymbol + "/" + mySymbol + "L.txt");
+                    myWriterV = new FileWriter("data/" + mySymbol + "/" + mySymbol + "V.txt");
+                    myWriter = new FileWriter("data/" + mySymbol + "/" + mySymbol + ".txt");
+
+                    myWriterWal = new FileWriter("data/" + mySymbol + "/" + mySymbol + "_Walidation.txt");
+                    System.out.print(mySymbol + " - zapis ");
+
+                    System.out.print("...");
+                    int i = 0;
+
+                    for (i = 0; i < rateInfoRecord.size() - 1; i++) {
+
+                        Candle candle = new Candle(rateInfoRecord.get(i));
+                        Candle candleNext = new Candle(rateInfoRecord.get(i + 1));
+
+                        try {
+                            myWriterO.write(candle.getOpenString() + separator);//dla ciagow czasowych
+                            myWriterC.write(candle.getCloseString() + separator);
+                            myWriterH.write(candle.getHighString() + separator);
+                            myWriterL.write(candle.getLowString() + separator);
+                            myWriterV.write(candle.getVolString() + separator);
+
+                            myWriter.write(candle.getOpenString() + separator
+                                    + //wejsca
+                                    candle.getCloseString() + separator
+                                    + candle.getHighString() + separator
+                                    + candle.getLowString() + separator
+                                    + candleNext.getCloseString() + separator
+                                    +//wyjscie
+                                    System.lineSeparator());
+
+                        } catch (IOException e) {
+                            System.out.println("error");
+                            e.printStackTrace();
+                        }
+
+                    }
+
+                    myWriterO.close();
+                    myWriterC.close();
+                    myWriterH.close();
+                    myWriterL.close();
+                    myWriterV.close();
+                    myWriter.close();
+                    System.out.print(" OK" + "[" + rateInfoRecord.size() + "]");
+                    System.out.println("");
+
+                }
+
+            } else {
+
+                // Print the error on console
+                System.err.println("Error: user couldn't log in!");
+
+            }
+
+            // Close connection
+            // Catch errors
+        } catch (UnknownHostException e) {
+        } catch (IOException | APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
+        }
+
+    }
+
     public void getCandlesOfTime(String mySymbol, PERIOD_CODE period_code, long time) {
 
         try {
@@ -115,7 +213,6 @@ public class XtbApi {
                 for (SymbolRecord symbol : availableSymbols.getSymbolRecords()) {
                     ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), period_code, time);
                     List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
-                    System.out.println(symbol.getSymbol());
                     if (!rateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
                         myWriterO = new FileWriter("data/" + mySymbol + "/" + mySymbol + "O.txt");
                         myWriterC = new FileWriter("data/" + mySymbol + "/" + mySymbol + "C.txt");
@@ -130,10 +227,10 @@ public class XtbApi {
                         System.out.print("...");
                         int i = 0;
 
-                        for (i = 0; i < rateInfoRecord.size()-1; i++) {
+                        for (i = 0; i < rateInfoRecord.size() - 1; i++) {
 
                             Candle candle = new Candle(rateInfoRecord.get(i));
-                            Candle candleNext = new Candle(rateInfoRecord.get(i+1));
+                            Candle candleNext = new Candle(rateInfoRecord.get(i + 1));
 
                             try {
                                 myWriterO.write(candle.getOpenString() + separator);//dla ciagow czasowych
@@ -141,14 +238,16 @@ public class XtbApi {
                                 myWriterH.write(candle.getHighString() + separator);
                                 myWriterL.write(candle.getLowString() + separator);
                                 myWriterV.write(candle.getVolString() + separator);
-                                
-                                myWriter.write(candle.getOpenString() + separator + //wejsca
-                                        candle.getCloseString() + separator+
-                                        candle.getHighString()+separator+
-                                        candle.getLowString()+separator+
-                                        candleNext.getCloseString()+separator+//wyjscie
+
+                                myWriter.write(candle.getOpenString() + separator
+                                        + //wejsca
+                                        candle.getCloseString() + separator
+                                        + candle.getHighString() + separator
+                                        + candle.getLowString() + separator
+                                        + candleNext.getCloseString() + separator
+                                        +//wyjscie
                                         System.lineSeparator());
-                                
+
                             } catch (IOException e) {
                                 System.out.println("error");
                                 e.printStackTrace();
@@ -164,7 +263,7 @@ public class XtbApi {
                         myWriter.close();
                         System.out.print(" OK" + "[" + rateInfoRecord.size() + "]");
                         System.out.println("");
-                        //słaby internet do usuniecia
+                        break;//słaby internet do usuniecia
                     }
 
                 }
