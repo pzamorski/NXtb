@@ -49,12 +49,17 @@ public class NXtb {
         System.out.println("insert [data]-insert " + input + " input");
         System.out.println("exit");
         System.out.print(">>");
+        
+
 
         if (args.length < 1) {
-            String[] execut = in.nextLine().split(" ");
+            //String[] execut = in.nextLine().split(" ");
+            String[] execut = {"lern"};
             args = new String[execut.length];
+            
             args = execut;
         }
+        
         for (int i = 0; i < args.length; i++) {
             commend = args[i];
             switch (commend) {
@@ -69,33 +74,44 @@ public class NXtb {
                     xtbApi.logout();
                 }
                 case "lern" -> {
+                    
+                    
                     for (int j = 0; j < n.length - 1; j++) {
 
                         System.out.println("Network: " + j);
 
                         averageOutput = 0;
-                        for (int k = 1; k < lernIteration; k++) {
+                        
+                        
+                       
                             n[j] = new NetworkN(input, 3 * input + 2, output);
                             n[j].setFileDataTrennig(symbol, NetworkType.TYPE_SLAVE[j]);
                             n[j].setLearningRate(0.001);
-                            n[j].setMaxError(0.0001);
+                            n[j].setMaxError(0.00001);
                             n[j].setMaxIteration(120000);
                             n[j].setMomentumChange(10);
                             n[j].setMaxMomentum(10);
                             n[j].getLernDataTimeSeries();
                             
                             try {
-
-                               // n[j].lern(false);
+                                
+                                //n[j].lern(false);
                                 n[j].lernThred();
                             } catch (Exception e) {
                                 n[j].reset();
                             }
-                        }
                     }
 //-------------------------------------------------------------------------------
                     //network master
-                    int interationNetworkMaster = 10;
+                        
+                    while(Thread.activeCount()!=1){
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                    int interationNetworkMaster = 10; 
                     for (int j = 0; j < interationNetworkMaster; j++) {
 
                         System.out.println("Network master");
@@ -150,5 +166,6 @@ public class NXtb {
         }
         System.exit(0);
     }
+    
 
 }
