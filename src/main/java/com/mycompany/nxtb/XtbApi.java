@@ -18,6 +18,8 @@ import pro.xstore.api.message.codes.TRADE_OPERATION_CODE;
 import pro.xstore.api.message.codes.TRADE_TRANSACTION_TYPE;
 import pro.xstore.api.message.command.APICommandFactory;
 import pro.xstore.api.message.command.ChartLastCommand;
+import pro.xstore.api.message.command.TradesCommand;
+import pro.xstore.api.message.command.TradesHistoryCommand;
 import pro.xstore.api.message.error.APICommandConstructionException;
 import pro.xstore.api.message.error.APICommunicationException;
 import pro.xstore.api.message.error.APIReplyParseException;
@@ -25,6 +27,7 @@ import pro.xstore.api.message.records.ChartLastInfoRecord;
 import pro.xstore.api.message.records.ChartRangeInfoRecord;
 import pro.xstore.api.message.records.RateInfoRecord;
 import pro.xstore.api.message.records.SymbolRecord;
+import pro.xstore.api.message.records.TradeRecord;
 import pro.xstore.api.message.records.TradeTransInfoRecord;
 import pro.xstore.api.message.response.APIErrorResponse;
 import pro.xstore.api.message.response.AllSymbolsResponse;
@@ -33,6 +36,9 @@ import pro.xstore.api.message.response.ChartResponse;
 import pro.xstore.api.message.response.LoginResponse;
 import pro.xstore.api.message.response.ServerTimeResponse;
 import pro.xstore.api.message.response.SymbolResponse;
+import pro.xstore.api.message.response.TradeTransactionResponse;
+import pro.xstore.api.message.response.TradesHistoryResponse;
+import pro.xstore.api.message.response.TradesResponse;
 import pro.xstore.api.sync.Credentials;
 import pro.xstore.api.sync.ServerData.ServerEnum;
 import pro.xstore.api.sync.SyncAPIConnector;
@@ -41,8 +47,8 @@ public class XtbApi {
 
     String mySymbol;
 
-    private final long id = 2345325L;
-    private final String password = "Password";
+    private final long id = 13983586;
+    private final String password = "i8V.@*%R3RPr46y";
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
@@ -88,11 +94,11 @@ public class XtbApi {
         return stuts;
     }
 
-    public String getLastSymbol() {
-        return lastSymbol;
+    public void setMySymbol(String mySymbol) {
+        this.mySymbol = mySymbol;
     }
 
-    public void getSymbolData(String mySymbol, PERIOD_CODE period_code, long time) {
+    public void getSymbolData(PERIOD_CODE period_code, long time) {
 
         try {
 
@@ -189,7 +195,7 @@ public class XtbApi {
 
     }
 
-    public void getCandlesOfTime(String mySymbol, PERIOD_CODE period_code, long time) {
+    public void getSymbolDataWithFind(PERIOD_CODE period_code, long time) {
 
         try {
 
@@ -288,47 +294,16 @@ public class XtbApi {
 
     }
 
-    public double[] getActualPrice() {
-
+    public SymbolRecord getSymbolRecord(String mySymbol) {
+        SymbolRecord symbolRecord = new SymbolRecord();
         try {
 
             if (loginResponse.getStatus() == true) {
 
-                AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
-                ServerTimeResponse serverTime = APICommandFactory.executeServerTimeCommand(connector);
-
+                SymbolResponse symbolResponse = APICommandFactory.executeSymbolCommand(connector, mySymbol);
+                symbolRecord = symbolResponse.getSymbol();
                 // Print the message on console
-                System.out.print("...");
-
-//                 List all available symbols on console
-                String separator = "\t";
-                for (SymbolRecord symbol : availableSymbols.getSymbolRecords()) {
-                    // System.out.println("-> " + symbol.getSymbol() + " Ask: " + symbol.getAsk() + " Bid: " + symbol.getBid());
-                    ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), PERIOD_CODE.PERIOD_H1, serverTime.getTime() - 5368000000L);
-                    List<RateInfoRecord> RateInfoRecord = chartLastCommand.getRateInfos();
-
-                    if (!RateInfoRecord.isEmpty() && symbol.getSymbol().contains(lastSymbol)) {
-                        System.out.print("GET: " + symbol.getSymbol());
-
-                        System.out.print("...");
-
-                        int lastIndexInfoRecord = RateInfoRecord.size() - 1;
-                        double dpriceOpen = RateInfoRecord.get(lastIndexInfoRecord).getOpen();
-                        double dpriceClose = RateInfoRecord.get(lastIndexInfoRecord).getClose();
-                        double dpriceHigh = RateInfoRecord.get(lastIndexInfoRecord).getHigh();
-                        double dpriceLow = RateInfoRecord.get(lastIndexInfoRecord).getLow();
-                        double dvolumen = RateInfoRecord.get(lastIndexInfoRecord).getVol();
-                        int dPipsCO = (int) ((dpriceClose + dpriceOpen) - dpriceOpen);
-                        // double dPipsHL = dpriceHigh-dpriceLow;
-
-                        actualPrice[0] = dpriceClose / 100;
-                        actualPrice[1] = dpriceHigh / 100;
-                        actualPrice[2] = dpriceLow / 100;
-
-                        break;//słaby internet do usuniecia
-                    }
-
-                }
+                ;
 
             } else {
 
@@ -340,30 +315,85 @@ public class XtbApi {
             // Catch errors
         } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
-        return actualPrice;
+        return symbolRecord;
 
     }
 
-    public void buy() {
-        try {
+    public void TradeTransaction(double priceFromNetwork) {
+        double tolerance = 1.25;
+        SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
+        double actualPrice = symbolRecord.getAsk();
+        double priceCondition = priceFromNetwork - actualPrice;
 
-            if (loginResponse.getStatus() == true) {
+        TRADE_OPERATION_CODE tradeOperattionCode = null;
+        TRADE_TRANSACTION_TYPE trade_transaction_type = null;
+        System.out.println("Przyszła cena z sieci: " + priceFromNetwork + " Cena aktualna: " + actualPrice);
 
-                ServerTimeResponse serverTime = APICommandFactory.executeServerTimeCommand(connector);
-                APICommandFactory.executeTradeTransactionCommand(connector, TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN, Double.NaN, Double.NaN, Double.NaN, mySymbol, Double.NaN, id, mySymbol, id);
-
-                // Print the message on console
-                System.out.print("...");
-
-            } else {
-
-                // Print the error on console
-                System.err.println("Error: user couldn't log in!");
-
+        if (Math.abs(priceCondition) > tolerance) {
+            if (priceFromNetwork > actualPrice) {
+                System.out.println("Buying " + mySymbol);
+                tradeOperattionCode = new TRADE_OPERATION_CODE(0L);//buy
+                trade_transaction_type = new TRADE_TRANSACTION_TYPE(0L);//open
             }
+            if (priceFromNetwork < actualPrice) {
+                System.out.println("Selling " + mySymbol);
+                tradeOperattionCode = new TRADE_OPERATION_CODE(1L);//sell
+                trade_transaction_type = new TRADE_TRANSACTION_TYPE(0L);//open
+            }
+        }
 
-            // Catch errors
-        } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
+        double price = symbolRecord.getAsk();
+        double sl = 0.0;
+        double tp = 0.0;
+        String symbol = symbolRecord.getSymbol();
+        double volume = 0.01;
+        long order = 0;
+        String customComment = "NXtb";
+        long expiration = 0;
+
+        TradeTransInfoRecord ttOpenInfoRecord = new TradeTransInfoRecord(
+                tradeOperattionCode,
+                trade_transaction_type,
+                price, sl, tp, symbol, volume, order, customComment, expiration);
+
+        if (tradeOperattionCode != null) {
+            try {
+                if (loginResponse.getStatus() == true) {
+
+                    TradesResponse tradesResponse = APICommandFactory.executeTradesCommand(connector, Boolean.TRUE);
+                    List<TradeRecord> listTradesResponse = tradesResponse.getTradeRecords();
+
+                    for (int i = 0; i < listTradesResponse.size(); i++) {
+                        TradeRecord record = listTradesResponse.get(i);
+                        
+
+                        TradeTransactionResponse tradeTransactionResponse;
+                        if (record.getProfit() > 0.1) {
+                            System.out.println("Sprzedaz z zyskiem: " + record.getProfit());
+                            tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
+                            System.out.println("response: " + tradeTransactionResponse.toString());
+                            ttOpenInfoRecord.setOrder(record.getOrder());
+                            ttOpenInfoRecord.setType(new TRADE_TRANSACTION_TYPE(2L));
+                            tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
+                            System.out.println("response: " + tradeTransactionResponse.toString());
+                        }
+
+                    }
+
+                    //TradeTransactionResponse tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
+                    //System.out.println("response: " + tradeTransactionResponse.toString());
+                } else {
+
+                    // Print the error on console
+                    System.err.println("Error: user couldn't log in!");
+
+                }
+
+                // Catch errors
+            } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
+            }
+        } else {
+            System.out.println("Brak transakcji");
         }
 
     }
