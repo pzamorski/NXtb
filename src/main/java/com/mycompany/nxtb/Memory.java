@@ -66,7 +66,7 @@ public class Memory {
 
                 arrayLoad[i] = Double.valueOf(arrayTemp[i]);
             }
-            System.out.println("Load[" + src + "]");
+           // System.out.println("Load[" + src + "]");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -93,7 +93,7 @@ public class Memory {
 
                 arrayLoad[i] = Integer.valueOf(arrayTemp[i]);
             }
-            System.out.println("Load[" + src + "]");
+           // System.out.println("Load[" + src + "]");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -120,7 +120,7 @@ public class Memory {
 
                 arrayLoad[i] = arrayTemp[i];
             }
-            System.out.println("Load[" + src + "]");
+            //System.out.println("Load[" + src + "]");
         } catch (IOException e) {
             e.printStackTrace();
         }

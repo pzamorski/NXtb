@@ -4,7 +4,6 @@
  */
 package com.mycompany.nxtb;
 
-
 import pro.xstore.api.message.records.RateInfoRecord;
 
 /**
@@ -13,6 +12,8 @@ import pro.xstore.api.message.records.RateInfoRecord;
  */
 public class Candle extends RateInfoRecord {
 
+    double mnoznik;
+
     public Candle(RateInfoRecord rateInfoRecord) {
         //super();
         super.setClose(rateInfoRecord.getClose());
@@ -20,28 +21,36 @@ public class Candle extends RateInfoRecord {
         super.setLow(rateInfoRecord.getLow());
         super.setOpen(rateInfoRecord.getOpen());
         super.setVol(rateInfoRecord.getVol());
-        super.setCtm((long)rateInfoRecord.getCtm());
+        super.setCtm((long) rateInfoRecord.getCtm());
     }
 
     @Override
     public double getOpen() {
-        return super.getOpen()/100; 
+        double openPric = super.getOpen();
+
+        if (openPric >= 1000) {
+            mnoznik = 100;
+            if (openPric >= 100000) {
+                mnoznik = 1000;
+            }
+        }
+
+        return super.getOpen() / mnoznik;
     }
-    
-    
+
     @Override
     public double getClose() {
-        return (super.getClose()+(getOpen()*100))/100; 
+        return (super.getClose() + (getOpen() * mnoznik)) / mnoznik;
     }
 
     @Override
     public double getLow() {
-        return (super.getLow() +(getOpen()*100))/100; 
+        return (super.getLow() + (getOpen() * mnoznik)) / mnoznik;
     }
 
     @Override
     public double getHigh() {
-        return (super.getHigh() +(getOpen()*100))/100; 
+        return (super.getHigh() + (getOpen() * mnoznik)) / mnoznik;
     }
 
     public String getCloseString() {
@@ -84,6 +93,5 @@ public class Candle extends RateInfoRecord {
     public String toString() {
         return "RateInfoRecord{" + "ctm=" + getCtm() + ", open=" + getOpen() + ", high=" + getHigh() + ", low=" + getLow() + ", close=" + getClose() + ", vol=" + getVol() + '}';
     }
-    
 
 }

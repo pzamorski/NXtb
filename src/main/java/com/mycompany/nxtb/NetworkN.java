@@ -39,6 +39,8 @@ public class NetworkN extends MultiLayerPerceptron {
 
     private DataSet dataSet, dataSetWalidation;
 
+    Thread threadLerning;
+
     public NetworkN(List<Integer> neuronsInLayers) {
         super(neuronsInLayers);
         createDynamicBackPropagation();
@@ -191,12 +193,16 @@ public class NetworkN extends MultiLayerPerceptron {
 
     public void lernThred() {
 
-        Thread thread = new Thread(() -> {
+        threadLerning = new Thread(() -> {
             this.lern();
 
         });
-        thread.start();
+        threadLerning.start();
+    }
 
+    public boolean checkLernThredAlive() {
+
+        return threadLerning.isAlive();
     }
 
     public void lern() {
@@ -379,7 +385,7 @@ public class NetworkN extends MultiLayerPerceptron {
 
             pred = (out[indexOutput]) * datamax + datamin;
 
-            System.out.printf("%s out:-> %.4f \n", Arrays.toString(neuronsInLayers), pred);
+       //     System.out.printf("%s out:-> %.4f \n", Arrays.toString(neuronsInLayers), pred);
         }
         return pred;
 
@@ -403,7 +409,7 @@ public class NetworkN extends MultiLayerPerceptron {
 
             pred = (out[indexOutput]) * datamax + datamin;
 
-            System.out.printf("%s out:-> %.4f \n", Arrays.toString(neuronsInLayers), pred);
+         //   System.out.printf("%s out:-> %.4f \n", Arrays.toString(neuronsInLayers), pred);
         }
         return pred;
 
@@ -481,7 +487,7 @@ public class NetworkN extends MultiLayerPerceptron {
             if (curentIteration % 5000 == 0 || curentIteration == 1) {
                 double Error = bp.getTotalNetworkError();
 
-                System.out.printf("I: %d/%d E: %.6f/%.6f M: %.0f/%.0f \n", curentIteration, bp.getMaxIterations(), bp.getTotalNetworkError(), bp.getMaxError(), bp.getMomentum() * 1.0E6, bp.getMaxMomentum() * 1.0E6);
+                //System.out.printf("I: %d/%d E: %.6f/%.6f M: %.0f/%.0f \n", curentIteration, bp.getMaxIterations(), bp.getTotalNetworkError(), bp.getMaxError(), bp.getMomentum() * 1.0E6, bp.getMaxMomentum() * 1.0E6);
 
             }
         }

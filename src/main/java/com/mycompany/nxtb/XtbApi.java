@@ -33,6 +33,7 @@ import pro.xstore.api.message.response.APIErrorResponse;
 import pro.xstore.api.message.response.AllSymbolsResponse;
 import pro.xstore.api.message.response.CalendarResponse;
 import pro.xstore.api.message.response.ChartResponse;
+import pro.xstore.api.message.response.CurrentUserDataResponse;
 import pro.xstore.api.message.response.LoginResponse;
 import pro.xstore.api.message.response.ServerTimeResponse;
 import pro.xstore.api.message.response.SymbolResponse;
@@ -61,7 +62,9 @@ public class XtbApi {
                     connector, // APIConnector
                     credentials // Credentials
             );
+
         }
+
         return checkIsLogin();
     }
 
@@ -320,33 +323,121 @@ public class XtbApi {
     }
 
     public void TradeTransaction(double priceFromNetwork) {
-        double tolerance = 1.25;
+        
+        this.StartMonitProfitInThred();
+        
+        int limitZleceń = 4;
+        TradeTransInfoRecord ttOpenInfoRecord = null;
+
+        double tolerance = 2;
+                
         SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
         double actualPrice = symbolRecord.getAsk();
         double priceCondition = priceFromNetwork - actualPrice;
 
-        TRADE_OPERATION_CODE tradeOperattionCode = null;
-        TRADE_TRANSACTION_TYPE trade_transaction_type = null;
-        System.out.println("Przyszła cena z sieci: " + priceFromNetwork + " Cena aktualna: " + actualPrice);
+        System.out.println("Przewidywana cena: " + priceFromNetwork + " Aktualna cena: " + actualPrice);
 
         if (Math.abs(priceCondition) > tolerance) {
             if (priceFromNetwork > actualPrice) {
-                System.out.println("Buying " + mySymbol);
-                tradeOperattionCode = new TRADE_OPERATION_CODE(0L);//buy
-                trade_transaction_type = new TRADE_TRANSACTION_TYPE(0L);//open
+                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN);
             }
             if (priceFromNetwork < actualPrice) {
-                System.out.println("Selling " + mySymbol);
-                tradeOperattionCode = new TRADE_OPERATION_CODE(1L);//sell
-                trade_transaction_type = new TRADE_TRANSACTION_TYPE(0L);//open
+                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.SELL, TRADE_TRANSACTION_TYPE.OPEN);
             }
+        } else {
+            System.out.println("Tolerancja przekroczona");
         }
 
+        if (ttOpenInfoRecord != null) {
+            try {
+                if (loginResponse.getStatus() == true) {
+
+                    TradesResponse tradesResponse = APICommandFactory.executeTradesCommand(connector, Boolean.TRUE);
+                    List<TradeRecord> listTradesResponse = tradesResponse.getTradeRecords();
+                    TradeTransactionResponse tradeTransactionResponse;
+
+                    int iloscZlecenDlaSymbolu = 0;
+                    for (int i = 0; i < listTradesResponse.size(); i++) {
+                        TradeRecord get = listTradesResponse.get(i);
+                        if (get.getSymbol().equals(mySymbol)) {
+                            iloscZlecenDlaSymbolu++;
+                        }
+                    }
+                    if (iloscZlecenDlaSymbolu <= limitZleceń) {//nie wiecej jak 4 zlecanie dla symbolu
+                        if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.BUY) {
+                            System.out.println("Buying " + mySymbol);
+                        }
+                        if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.SELL) {
+                            System.out.println("Selling " + mySymbol);
+                        }
+
+                        tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
+
+                        System.out.println("response: " + tradeTransactionResponse.toString());
+
+                    } else {
+                        System.err.println("Maksimum zlecń dla " + mySymbol);
+                    }
+                }
+
+            } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
+            }
+        } else {
+            System.out.println("Brak transakcji");
+        }
+        
+ 
+
+    }
+
+    public void StartMonitProfit() {
+
+        TradeTransInfoRecord ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.CLOSE);
+        boolean loginStatus = loginResponse.getStatus();
+        try {
+            if (loginStatus) {
+
+                TradesResponse tradesResponse = APICommandFactory.executeTradesCommand(connector, Boolean.TRUE);
+                List<TradeRecord> listTradesResponse = tradesResponse.getTradeRecords();
+                TradeTransactionResponse tradeTransactionResponse;
+
+                for (int i = 0; i < listTradesResponse.size(); i++) {
+                    TradeRecord record = listTradesResponse.get(i);
+
+                    if (record.getProfit() > 1) {
+                        ttOpenInfoRecord.setOrder(record.getOrder());
+                        ttOpenInfoRecord.setVolume(record.getVolume());
+                        tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
+                        System.out.println("response: " + tradeTransactionResponse.toString());
+                    }
+
+                }
+
+            }
+        } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
+        }
+
+    }
+
+    public void StartMonitProfitInThred() {
+        Thread thread = new Thread(() -> {
+            this.StartMonitProfit();
+
+        });
+        System.out.println("Start thred monit profit");
+        thread.start();
+
+    }
+
+    private TradeTransInfoRecord CreateTradeTransInfoRecord(TRADE_OPERATION_CODE tradeOperattionCode, TRADE_TRANSACTION_TYPE trade_transaction_type) {
+
+        SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
+        double actualPrice = symbolRecord.getAsk();
         double price = symbolRecord.getAsk();
         double sl = 0.0;
         double tp = 0.0;
         String symbol = symbolRecord.getSymbol();
-        double volume = 0.01;
+        double volume = 0.03;
         long order = 0;
         String customComment = "NXtb";
         long expiration = 0;
@@ -356,45 +447,7 @@ public class XtbApi {
                 trade_transaction_type,
                 price, sl, tp, symbol, volume, order, customComment, expiration);
 
-        if (tradeOperattionCode != null) {
-            try {
-                if (loginResponse.getStatus() == true) {
-
-                    TradesResponse tradesResponse = APICommandFactory.executeTradesCommand(connector, Boolean.TRUE);
-                    List<TradeRecord> listTradesResponse = tradesResponse.getTradeRecords();
-
-                    for (int i = 0; i < listTradesResponse.size(); i++) {
-                        TradeRecord record = listTradesResponse.get(i);
-                        
-
-                        TradeTransactionResponse tradeTransactionResponse;
-                        if (record.getProfit() > 0.1) {
-                            System.out.println("Sprzedaz z zyskiem: " + record.getProfit());
-                            tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
-                            System.out.println("response: " + tradeTransactionResponse.toString());
-                            ttOpenInfoRecord.setOrder(record.getOrder());
-                            ttOpenInfoRecord.setType(new TRADE_TRANSACTION_TYPE(2L));
-                            tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
-                            System.out.println("response: " + tradeTransactionResponse.toString());
-                        }
-
-                    }
-
-                    //TradeTransactionResponse tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
-                    //System.out.println("response: " + tradeTransactionResponse.toString());
-                } else {
-
-                    // Print the error on console
-                    System.err.println("Error: user couldn't log in!");
-
-                }
-
-                // Catch errors
-            } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
-            }
-        } else {
-            System.out.println("Brak transakcji");
-        }
+        return ttOpenInfoRecord;
 
     }
 
