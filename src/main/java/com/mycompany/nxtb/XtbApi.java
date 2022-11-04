@@ -64,10 +64,14 @@ public class XtbApi{
             );
 
         }
-
+        System.out.println("");
         return checkIsLogin();
     }
 
+    
+    
+    
+    
     public boolean login(long id, String password) throws APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse, IOException {
         if (checkIsLogin() == false) {
             Credentials credentials = new Credentials(id, password);
