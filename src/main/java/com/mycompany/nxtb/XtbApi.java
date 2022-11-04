@@ -44,12 +44,12 @@ import pro.xstore.api.sync.Credentials;
 import pro.xstore.api.sync.ServerData.ServerEnum;
 import pro.xstore.api.sync.SyncAPIConnector;
 
-public class XtbApi {
+public class XtbApi{
 
     String mySymbol;
 
     private final long id = 13983586;
-    private final String password = "i8V.@*%R3RPr46y1";
+    private final String password = "i8V.@*%R3RPr461y";
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
@@ -108,6 +108,8 @@ public class XtbApi {
             if (loginResponse.getStatus() == true) {
                 lastSymbol = mySymbol;
 
+                
+                
                 AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
 
                 System.out.print("...");
@@ -323,14 +325,13 @@ public class XtbApi {
     }
 
     public void TradeTransaction(double priceFromNetwork) {
-        
-        this.StartMonitProfitInThred();
-        
-        int limitZleceń = 4;
+
+       
+        int limitZleceń = 10;
         TradeTransInfoRecord ttOpenInfoRecord = null;
 
-        double tolerance = 2;
-                
+        double tolerance = 4;
+
         SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
         double actualPrice = symbolRecord.getAsk();
         double priceCondition = priceFromNetwork - actualPrice;
@@ -341,16 +342,20 @@ public class XtbApi {
             if (priceFromNetwork > actualPrice) {
                 ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN);
             }
-            if (priceFromNetwork < actualPrice) {
-                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.SELL, TRADE_TRANSACTION_TYPE.OPEN);
-            }
+//            if (priceFromNetwork < actualPrice) {
+//                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.SELL, TRADE_TRANSACTION_TYPE.OPEN);
+//            }
         } else {
             System.out.println("Tolerancja przekroczona");
         }
 
         if (ttOpenInfoRecord != null) {
+
             try {
                 if (loginResponse.getStatus() == true) {
+                       this.StartMonitProfitInThred();
+                    //set take profit
+                    //ttOpenInfoRecord.setTp(actualPrice + 0.5);
 
                     TradesResponse tradesResponse = APICommandFactory.executeTradesCommand(connector, Boolean.TRUE);
                     List<TradeRecord> listTradesResponse = tradesResponse.getTradeRecords();
@@ -363,13 +368,13 @@ public class XtbApi {
                             iloscZlecenDlaSymbolu++;
                         }
                     }
-                    if (iloscZlecenDlaSymbolu <= limitZleceń) {//nie wiecej jak 4 zlecanie dla symbolu
+                    if (iloscZlecenDlaSymbolu <= limitZleceń) {//nie wiecej jak limitZleceń 
                         if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.BUY) {
                             System.out.println("Buying " + mySymbol);
                         }
-                        if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.SELL) {
-                            System.out.println("Selling " + mySymbol);
-                        }
+//                        if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.SELL) {
+//                            System.out.println("Selling " + mySymbol);
+//                        }
 
                         tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
 
@@ -385,13 +390,13 @@ public class XtbApi {
         } else {
             System.out.println("Brak transakcji");
         }
-        
- 
 
     }
 
     public void StartMonitProfit() {
 
+  while(true){
+        
         TradeTransInfoRecord ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.CLOSE);
         boolean loginStatus = loginResponse.getStatus();
         try {
@@ -403,11 +408,11 @@ public class XtbApi {
 
                 for (int i = 0; i < listTradesResponse.size(); i++) {
                     TradeRecord record = listTradesResponse.get(i);
-
-                    if (record.getProfit() > 1) {
+                    if (record.getProfit() > 0.1) {
                         ttOpenInfoRecord.setOrder(record.getOrder());
                         ttOpenInfoRecord.setVolume(record.getVolume());
                         tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
+                        
                         System.out.println("response: " + tradeTransactionResponse.toString());
                     }
 
@@ -417,16 +422,22 @@ public class XtbApi {
         } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
 
+      try {
+          Thread.sleep(10000);
+      } catch (InterruptedException ex) {
+          Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+      }
+        
     }
-
-    public void StartMonitProfitInThred() {
-        Thread thread = new Thread(() -> {
-            this.StartMonitProfit();
+    }
+    public Thread StartMonitProfitInThred() {
+        Thread monitProfitInThred = new Thread(() -> {
+            StartMonitProfit();
 
         });
         System.out.println("Start thred monit profit");
-        thread.start();
-
+        monitProfitInThred.start();
+        return monitProfitInThred;
     }
 
     private TradeTransInfoRecord CreateTradeTransInfoRecord(TRADE_OPERATION_CODE tradeOperattionCode, TRADE_TRANSACTION_TYPE trade_transaction_type) {
@@ -437,7 +448,7 @@ public class XtbApi {
         double sl = 0.0;
         double tp = 0.0;
         String symbol = symbolRecord.getSymbol();
-        double volume = 0.03;
+        double volume = 0.05;
         long order = 0;
         String customComment = "NXtb";
         long expiration = 0;
@@ -467,5 +478,7 @@ public class XtbApi {
         }
         return serverTime.getTime();
     }
+
+
 
 }
