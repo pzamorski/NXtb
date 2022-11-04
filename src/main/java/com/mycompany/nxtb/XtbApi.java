@@ -64,7 +64,6 @@ public class XtbApi{
             );
 
         }
-        System.out.println("");
         return checkIsLogin();
     }
 
