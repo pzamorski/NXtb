@@ -55,7 +55,7 @@ public class XtbApi {
     private static final String DATA = ".txt";
 
     private final long id = 13983586;
-    private final String password = "i8V.@*%R3RPr46y";
+    private final String password = "i8V.@*%R3RPr461y";
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
