@@ -47,7 +47,7 @@ public class NXtb {
 
         Thread monitThread = null;
         xtbApi.login();
-//        monitThread = xtbApi.StartMonitProfitInThred();
+        monitThread = xtbApi.StartMonitProfitInThred();
         xtbApi.setMySymbol(symbol);
         for (;;) {
 
