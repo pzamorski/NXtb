@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.mycompany.nxtb;
+package com.mycompany.nxtb.api;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -44,89 +44,99 @@ import pro.xstore.api.sync.Credentials;
 import pro.xstore.api.sync.ServerData.ServerEnum;
 import pro.xstore.api.sync.SyncAPIConnector;
 
-public class XtbApi{
+public class XtbApi {
 
-    String mySymbol;
+    private static final String DATA_O = "O.txt";
+    private static final String DATA_C = "C.txt";
+    private static final String DATA_H = "H.txt";
+    private static final String DATA_L = "L.txt";
+    private static final String DATA_V = "V.txt";
+    private static final String DATA = ".txt";
 
     private final long id = 13983586;
     private final String password = "i8V.@*%R3RPr461y";
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
-    private double[] actualPrice = new double[3];
+    private String mySymbol = null;
+    private String pathSaveBuilder = null;
+    private String separator = ",";
+
+    public XtbApi() throws IOException {
+        connector = new SyncAPIConnector(ServerEnum.DEMO);
+    }
 
     public boolean login() throws APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse, IOException {
         if (checkIsLogin() == false) {
             Credentials credentials = new Credentials(id, password);
-            loginResponse = APICommandFactory.executeLoginCommand(
-                    connector, // APIConnector
-                    credentials // Credentials
-            );
-
+            loginResponse = APICommandFactory.executeLoginCommand(connector, credentials);
         }
-        return checkIsLogin();
-    }
-
-    
-    
-    
-    
-    public boolean login(long id, String password) throws APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse, IOException {
-        if (checkIsLogin() == false) {
-            Credentials credentials = new Credentials(id, password);
-            loginResponse = APICommandFactory.executeLoginCommand(
-                    connector, // APIConnector
-                    credentials // Credentials
-            );
-        }
-
         return checkIsLogin();
     }
 
     public void logout() throws APICommunicationException {
         connector.close();
-        System.out.println("Połączenie zamkniete");
-
+        System.out.println("Logout");
     }
 
-    public boolean checkIsLogin() {
-        boolean stuts = false;
+    private boolean checkIsLogin() {
+        boolean loginResponseStatus = false;
         if (loginResponse != null) {
-            if (loginResponse.getStatus() == true) {
-                System.out.println("Zalogowany");
-                stuts = true;
-            }
+            loginResponseStatus = loginResponse.getStatus();
         }
-        return stuts;
+        return loginResponseStatus;
+    }
+
+    private boolean checkConditionSymbol() {
+        return mySymbol != null;
     }
 
     public void setMySymbol(String mySymbol) {
         this.mySymbol = mySymbol;
     }
 
+    public String buildPathFile(String type) {
+        StringBuilder returnPathFile = null;
+        if (checkConditionSymbol()) {
+            returnPathFile = new StringBuilder("data/" + mySymbol + "/" + mySymbol);
+            switch (type) {
+                case DATA_O:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_C:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_H:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_L:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_V:
+                    returnPathFile.append(type);
+                    break;
+                case DATA:
+                    returnPathFile.append(type);
+                    break;
+            }
+        }
+        return returnPathFile.toString();
+    }
+
     public void getSymbolData(PERIOD_CODE period_code, long time) {
 
         try {
 
-            if (loginResponse.getStatus() == true) {
-                lastSymbol = mySymbol;
-
-                
-                
-                AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
-
+            if (checkIsLogin() && checkConditionSymbol()) {
                 System.out.print("...");
 
-                FileWriter myWriterO = null;
-                FileWriter myWriterC = null;
-                FileWriter myWriterH = null;
-                FileWriter myWriterL = null;
-                FileWriter myWriterV = null;
-                FileWriter myWriter = null;
+                FileWriter myWriterO = null,
+                        myWriterC = null,
+                        myWriterH = null,
+                        myWriterL = null,
+                        myWriterV = null,
+                        myWriter = null;
 
-                FileWriter myWriterWal = null;
-//                 List all available symbols on console
-                String separator = ",";
                 ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, mySymbol, period_code, time);
                 List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
                 if (!rateInfoRecord.isEmpty()) {
@@ -136,20 +146,18 @@ public class XtbApi{
                         dataDir.mkdirs();
                     }
 
-                    myWriterO = new FileWriter("data/" + mySymbol + "/" + mySymbol + "O.txt");
-                    myWriterC = new FileWriter("data/" + mySymbol + "/" + mySymbol + "C.txt");
-                    myWriterH = new FileWriter("data/" + mySymbol + "/" + mySymbol + "H.txt");
-                    myWriterL = new FileWriter("data/" + mySymbol + "/" + mySymbol + "L.txt");
-                    myWriterV = new FileWriter("data/" + mySymbol + "/" + mySymbol + "V.txt");
-                    myWriter = new FileWriter("data/" + mySymbol + "/" + mySymbol + ".txt");
+                    myWriterO = new FileWriter(buildPathFile(DATA_O));
+                    myWriterC = new FileWriter(buildPathFile(DATA_C));
+                    myWriterH = new FileWriter(buildPathFile(DATA_H));
+                    myWriterL = new FileWriter(buildPathFile(DATA_L));
+                    myWriterV = new FileWriter(buildPathFile(DATA_V));
+                    myWriter = new FileWriter(buildPathFile(DATA));
 
-                    myWriterWal = new FileWriter("data/" + mySymbol + "/" + mySymbol + "_Walidation.txt");
                     System.out.print(mySymbol + " - zapis ");
 
                     System.out.print("...");
-                    int i = 0;
 
-                    for (i = 0; i < rateInfoRecord.size() - 1; i++) {
+                    for (int i = 0; i < rateInfoRecord.size() - 1; i++) {
 
                         Candle candle = new Candle(rateInfoRecord.get(i));
                         Candle candleNext = new Candle(rateInfoRecord.get(i + 1));
@@ -162,13 +170,11 @@ public class XtbApi{
                             myWriterV.write(candle.getVolString() + separator);
 
                             myWriter.write(candle.getOpenString() + separator
-                                    + //wejsca
-                                    candle.getCloseString() + separator
+                                    + candle.getCloseString() + separator
                                     + candle.getHighString() + separator
                                     + candle.getLowString() + separator
                                     + candleNext.getCloseString() + separator
-                                    +//wyjscie
-                                    System.lineSeparator());
+                                    + System.lineSeparator());
 
                         } catch (IOException e) {
                             System.out.println("error");
@@ -176,72 +182,60 @@ public class XtbApi{
                         }
 
                     }
-
                     myWriterO.close();
                     myWriterC.close();
                     myWriterH.close();
                     myWriterL.close();
                     myWriterV.close();
                     myWriter.close();
-                    System.out.print(" OK" + "[" + rateInfoRecord.size() + "]");
-                    System.out.println("");
-
+                    System.out.println(" OK" + "[" + rateInfoRecord.size() + "]");
                 }
 
             } else {
-
-                // Print the error on console
                 System.err.println("Error: user couldn't log in!");
-
             }
-
-            // Close connection
-            // Catch errors
         } catch (UnknownHostException e) {
         } catch (IOException | APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
-
     }
 
-    public void getSymbolDataWithFind(PERIOD_CODE period_code, long time) {
+    public void getSymbolDataWithFindSymbol(PERIOD_CODE period_code, long time) {
 
         try {
 
-            if (loginResponse.getStatus() == true) {
-                lastSymbol = mySymbol;
-
+            if (checkIsLogin() && checkConditionSymbol()) {
                 AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
-
                 System.out.print("...");
 
-                FileWriter myWriterO = null;
-                FileWriter myWriterC = null;
-                FileWriter myWriterH = null;
-                FileWriter myWriterL = null;
-                FileWriter myWriterV = null;
-                FileWriter myWriter = null;
+                FileWriter myWriterO = null,
+                        myWriterC = null,
+                        myWriterH = null,
+                        myWriterL = null,
+                        myWriterV = null,
+                        myWriter = null;
 
-                FileWriter myWriterWal = null;
-//                 List all available symbols on console
-                String separator = ",";
                 for (SymbolRecord symbol : availableSymbols.getSymbolRecords()) {
                     ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), period_code, time);
                     List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
                     if (!rateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
-                        myWriterO = new FileWriter("data/" + mySymbol + "/" + mySymbol + "O.txt");
-                        myWriterC = new FileWriter("data/" + mySymbol + "/" + mySymbol + "C.txt");
-                        myWriterH = new FileWriter("data/" + mySymbol + "/" + mySymbol + "H.txt");
-                        myWriterL = new FileWriter("data/" + mySymbol + "/" + mySymbol + "L.txt");
-                        myWriterV = new FileWriter("data/" + mySymbol + "/" + mySymbol + "V.txt");
-                        myWriter = new FileWriter("data/" + mySymbol + "/" + mySymbol + ".txt");
 
-                        myWriterWal = new FileWriter("data/" + mySymbol + "/" + mySymbol + "_Walidation.txt");
+                        File dataDir = new File("data/" + mySymbol);
+                        if (!dataDir.exists()) {
+                            dataDir.mkdirs();
+                        }
+
+                        myWriterO = new FileWriter(buildPathFile(DATA_O));
+                        myWriterC = new FileWriter(buildPathFile(DATA_C));
+                        myWriterH = new FileWriter(buildPathFile(DATA_H));
+                        myWriterL = new FileWriter(buildPathFile(DATA_L));
+                        myWriterV = new FileWriter(buildPathFile(DATA_V));
+                        myWriter = new FileWriter(buildPathFile(DATA));
+
                         System.out.print(symbol.getSymbol() + " - zapis ");
 
                         System.out.print("...");
-                        int i = 0;
 
-                        for (i = 0; i < rateInfoRecord.size() - 1; i++) {
+                        for (int i = 0; i < rateInfoRecord.size() - 1; i++) {
 
                             Candle candle = new Candle(rateInfoRecord.get(i));
                             Candle candleNext = new Candle(rateInfoRecord.get(i + 1));
@@ -275,30 +269,15 @@ public class XtbApi{
                         myWriterL.close();
                         myWriterV.close();
                         myWriter.close();
-                        System.out.print(" OK" + "[" + rateInfoRecord.size() + "]");
-                        System.out.println("");
-                        break;//słaby internet do usuniecia
+                        System.out.println(" OK" + "[" + rateInfoRecord.size() + "]");
                     }
-
                 }
-
             } else {
-
-                // Print the error on console
                 System.err.println("Error: user couldn't log in!");
-
             }
-
-            // Close connection
-            // Catch errors
         } catch (UnknownHostException e) {
         } catch (IOException | APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
-
-    }
-
-    public XtbApi() throws IOException {
-        connector = new SyncAPIConnector(ServerEnum.DEMO);
 
     }
 
@@ -306,34 +285,25 @@ public class XtbApi{
         SymbolRecord symbolRecord = new SymbolRecord();
         try {
 
-            if (loginResponse.getStatus() == true) {
-
+            if (checkIsLogin() && checkConditionSymbol()) {
                 SymbolResponse symbolResponse = APICommandFactory.executeSymbolCommand(connector, mySymbol);
                 symbolRecord = symbolResponse.getSymbol();
-                // Print the message on console
-                ;
-
             } else {
-
-                // Print the error on console
                 System.err.println("Error: user couldn't log in!");
-
             }
 
-            // Catch errors
         } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
         return symbolRecord;
-
     }
 
     public void TradeTransaction(double priceFromNetwork) {
 
-       
         int limitZleceń = 10;
+        double tolerance = 4;
         TradeTransInfoRecord ttOpenInfoRecord = null;
 
-        double tolerance = 4;
+        
 
         SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
         double actualPrice = symbolRecord.getAsk();
@@ -356,7 +326,7 @@ public class XtbApi{
 
             try {
                 if (loginResponse.getStatus() == true) {
-                       this.StartMonitProfitInThred();
+                    this.StartMonitProfitInThred();
                     //set take profit
                     //ttOpenInfoRecord.setTp(actualPrice + 0.5);
 
@@ -398,41 +368,42 @@ public class XtbApi{
 
     public void StartMonitProfit() {
 
-  while(true){
-        
-        TradeTransInfoRecord ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.CLOSE);
-        boolean loginStatus = loginResponse.getStatus();
-        try {
-            if (loginStatus) {
+        while (true) {
 
-                TradesResponse tradesResponse = APICommandFactory.executeTradesCommand(connector, Boolean.TRUE);
-                List<TradeRecord> listTradesResponse = tradesResponse.getTradeRecords();
-                TradeTransactionResponse tradeTransactionResponse;
+            TradeTransInfoRecord ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.CLOSE);
+            boolean loginStatus = loginResponse.getStatus();
+            try {
+                if (loginStatus) {
 
-                for (int i = 0; i < listTradesResponse.size(); i++) {
-                    TradeRecord record = listTradesResponse.get(i);
-                    if (record.getProfit() > 0.1) {
-                        ttOpenInfoRecord.setOrder(record.getOrder());
-                        ttOpenInfoRecord.setVolume(record.getVolume());
-                        tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
-                        
-                        System.out.println("response: " + tradeTransactionResponse.toString());
+                    TradesResponse tradesResponse = APICommandFactory.executeTradesCommand(connector, Boolean.TRUE);
+                    List<TradeRecord> listTradesResponse = tradesResponse.getTradeRecords();
+                    TradeTransactionResponse tradeTransactionResponse;
+
+                    for (int i = 0; i < listTradesResponse.size(); i++) {
+                        TradeRecord record = listTradesResponse.get(i);
+                        if (record.getProfit() > 0.1) {
+                            ttOpenInfoRecord.setOrder(record.getOrder());
+                            ttOpenInfoRecord.setVolume(record.getVolume());
+                            tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
+
+                            System.out.println("response: " + tradeTransactionResponse.toString());
+                        }
+
                     }
 
                 }
-
+            } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
             }
-        } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
-        }
 
-      try {
-          Thread.sleep(10000);
-      } catch (InterruptedException ex) {
-          Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
-      }
-        
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
     }
-    }
+
     public Thread StartMonitProfitInThred() {
         Thread monitProfitInThred = new Thread(() -> {
             StartMonitProfit();
@@ -446,11 +417,9 @@ public class XtbApi{
     private TradeTransInfoRecord CreateTradeTransInfoRecord(TRADE_OPERATION_CODE tradeOperattionCode, TRADE_TRANSACTION_TYPE trade_transaction_type) {
 
         SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
-        double actualPrice = symbolRecord.getAsk();
-        double price = symbolRecord.getAsk();
+
         double sl = 0.0;
         double tp = 0.0;
-        String symbol = symbolRecord.getSymbol();
         double volume = 0.05;
         long order = 0;
         String customComment = "NXtb";
@@ -459,7 +428,15 @@ public class XtbApi{
         TradeTransInfoRecord ttOpenInfoRecord = new TradeTransInfoRecord(
                 tradeOperattionCode,
                 trade_transaction_type,
-                price, sl, tp, symbol, volume, order, customComment, expiration);
+                symbolRecord.getAsk(),
+                sl, 
+                tp,
+                symbolRecord.getSymbol(),
+                volume,
+                order,
+                customComment,
+                expiration
+        );
 
         return ttOpenInfoRecord;
 
@@ -469,7 +446,6 @@ public class XtbApi{
         ServerTimeResponse serverTime = null;
         try {
             serverTime = APICommandFactory.executeServerTimeCommand(connector);
-
         } catch (APICommandConstructionException ex) {
             Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
         } catch (APICommunicationException ex) {
@@ -481,7 +457,5 @@ public class XtbApi{
         }
         return serverTime.getTime();
     }
-
-
 
 }

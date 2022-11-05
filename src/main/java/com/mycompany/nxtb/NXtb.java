@@ -4,6 +4,11 @@
  */
 package com.mycompany.nxtb;
 
+import com.mycompany.nxtb.neuron.NetworkN;
+import com.mycompany.nxtb.neuron.NetworkType;
+import com.mycompany.nxtb.tools.Memory;
+import com.mycompany.nxtb.tools.TimeRange;
+import com.mycompany.nxtb.api.XtbApi;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
