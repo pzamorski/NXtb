@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
@@ -54,13 +55,15 @@ public class XtbApi {
     private static final String DATA = ".txt";
 
     private final long id = 13983586;
-    private final String password = "i8V.@*%R3RPr461y";
+    private final String password = "i8V.@*%R3RPr46y";
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
     private String mySymbol = null;
     private String pathSaveBuilder = null;
     private String separator = ",";
+
+    ArrayList<Order> orders = new ArrayList<Order>();
 
     public XtbApi() throws IOException {
         connector = new SyncAPIConnector(ServerEnum.DEMO);
@@ -303,9 +306,8 @@ public class XtbApi {
         double tolerance = 4;
         TradeTransInfoRecord ttOpenInfoRecord = null;
 
-        
-
         SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
+
         double actualPrice = symbolRecord.getAsk();
         double priceCondition = priceFromNetwork - actualPrice;
 
@@ -429,7 +431,7 @@ public class XtbApi {
                 tradeOperattionCode,
                 trade_transaction_type,
                 symbolRecord.getAsk(),
-                sl, 
+                sl,
                 tp,
                 symbolRecord.getSymbol(),
                 volume,
@@ -458,4 +460,33 @@ public class XtbApi {
         return serverTime.getTime();
     }
 
+    public void TradeTransaction2(double priceFromNetwork) {
+
+        if (checkIsLogin() && checkConditionSymbol()) {
+            SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
+
+            if (orders.isEmpty()) {
+                Order order = new Order();
+                order.execut(connector, priceFromNetwork, symbolRecord);
+                orders.add(0,order);
+                System.out.println("Dodanie do pustej " + symbolRecord.getSymbol());
+            } else {
+                for (int i = 0; i < orders.size(); i++) {
+                    if (!orders.get(i).getSymbol().equals(mySymbol)) {
+                        Order order = new Order();
+                        order.execut(connector, priceFromNetwork, symbolRecord);
+                        orders.add(order);
+                        System.out.println("Dodanie do "+orders.size()+"+1" + symbolRecord.getSymbol());
+                    }
+
+                }
+                for (int j = 0; j < orders.size(); j++) {
+                    orders.get(j).setSymbolRecord(symbolRecord);
+                    System.err.println("exe " + symbolRecord.getSymbol());
+
+                }
+
+            }
+        }
+    }
 }

@@ -47,7 +47,7 @@ public class NXtb {
 
         Thread monitThread = null;
         xtbApi.login();
-        monitThread = xtbApi.StartMonitProfitInThred();
+//        monitThread = xtbApi.StartMonitProfitInThred();
         xtbApi.setMySymbol(symbol);
         for (;;) {
 
@@ -61,16 +61,12 @@ public class NXtb {
                     }
                 }
 
-                System.out.println("Run " + symbol);
-
                 Date dateRange = new Date(new TimeRange().getRange(new Date().getTime(), 20));
 
                 xtbApi.setMySymbol(symbol);
-                System.out.println("Download " + symbol + " data: " + dateRange);
+                System.out.println("Run " + symbol + " data: " + dateRange);
                 xtbApi.getSymbolData(PERIOD_CODE.PERIOD_H1, dateRange.getTime());
-//                System.out.println("Start monit thred");
 
-                //xtbApi.logout();
                 for (int j = 0; j < networkSlave.length - 1; j++) {
 
                     System.out.print("Network->" + j + " ");
@@ -95,57 +91,58 @@ public class NXtb {
                 }
 //-------------------------------------------------------------------------------
                 //network master
+                
+                if (monitThread != null) {
+                    while (Thread.activeCount() != 2 && !(Thread.currentThread().isAlive()
+                            && monitThread.isAlive())) {
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                } else {System.out.println("        "+Thread.activeCount());}
 
-                while (Thread.activeCount() != 2 && !(Thread.currentThread().isAlive()
-                        && monitThread.isAlive())) {
+                    int interationNetworkMaster = 50;
+                    System.out.println("Network master");
+                    for (int j = 0; j < interationNetworkMaster; j++) {
+
+                        networkMaster = new NetworkN(input, 4 * input + 2, output);
+                        networkMaster.setFileDataTrennig(symbol, NetworkType.TYPE_MASTER[0]);
+                        networkMaster.setLearningRate(0.001);
+                        networkMaster.setMaxError(0.001);
+                        networkMaster.setMaxIteration(120000);
+                        networkMaster.setMomentumChange(1);
+                        networkMaster.setMaxMomentum(1);
+                        networkMaster.getLernDataSegmen();
+                        try {
+
+                            networkMaster.lern(false);
+                        } catch (Exception e) {
+                            networkMaster.reset();
+                        }
+
+                        double out = networkMaster.inputScaner(new double[]{
+                            networkSlave[0].inputScaner(networkSlave[0].getLastSymbol(), 0),
+                            networkSlave[1].inputScaner(networkSlave[1].getLastSymbol(), 0),
+                            networkSlave[2].inputScaner(networkSlave[2].getLastSymbol(), 0),
+                            networkSlave[3].inputScaner(networkSlave[3].getLastSymbol(), 0),}, 0);
+                        averageOutput = averageOutput + out;
+
+                    }
+                    averageOutput = (averageOutput / interationNetworkMaster);
+                    xtbApi.TradeTransaction(averageOutput);
+
                     try {
-                        Thread.sleep(10);
+                        Thread.sleep(1000);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                    System.out.println("");
                 }
 
-                int interationNetworkMaster = 50;
-                System.out.println("Network master");
-                for (int j = 0; j < interationNetworkMaster; j++) {
-
-                    networkMaster = new NetworkN(input, 4 * input + 2, output);
-                    networkMaster.setFileDataTrennig(symbol, NetworkType.TYPE_MASTER[0]);
-                    networkMaster.setLearningRate(0.001);
-                    networkMaster.setMaxError(0.001);
-                    networkMaster.setMaxIteration(120000);
-                    networkMaster.setMomentumChange(1);
-                    networkMaster.setMaxMomentum(1);
-                    networkMaster.getLernDataSegmen();
-                    try {
-
-                        networkMaster.lern(false);
-                    } catch (Exception e) {
-                        networkMaster.reset();
-                    }
-
-                    double out = networkMaster.inputScaner(new double[]{
-                        networkSlave[0].inputScaner(networkSlave[0].getLastSymbol(), 0),
-                        networkSlave[1].inputScaner(networkSlave[1].getLastSymbol(), 0),
-                        networkSlave[2].inputScaner(networkSlave[2].getLastSymbol(), 0),
-                        networkSlave[3].inputScaner(networkSlave[3].getLastSymbol(), 0),}, 0);
-                    averageOutput = averageOutput + out;
-
-                }
-                averageOutput = (averageOutput / interationNetworkMaster);
-                System.out.println(averageOutput);
-                xtbApi.TradeTransaction(averageOutput);
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                System.out.println("");
             }
 
         }
 
     }
-
-}
