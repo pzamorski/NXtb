@@ -101,7 +101,7 @@ public class NXtb {
                             Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
-                } else {System.out.println("        "+Thread.activeCount());}
+                } 
 
                     int interationNetworkMaster = 50;
                     System.out.println("Network master");
