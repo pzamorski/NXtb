@@ -192,13 +192,14 @@ public class NetworkN extends MultiLayerPerceptron {
         dbp.setMaxMomentum(0.9d);
     }
 
-    public void lernThred() {
+    public Thread lernThred() {
 
         threadLerning = new Thread(() -> {
             this.lern();
 
         });
         threadLerning.start();
+        return threadLerning;
     }
 
     public boolean checkLernThredAlive() {
