@@ -51,22 +51,31 @@ public class NXtb {
         Thread[] thredLerniSlave = new Thread[sizeOFNetworkSlave];
         double averageOutput = 0;
 
-        Thread monitThread = null;
         xtbApi.login();
         xtbApi.setMySymbol(symbol);
+        Thread monitThread = xtbApi.StartMonitProfitInThred();
 
-        ArrayOrders orders=new ArrayOrders();
-        
-        for (int i = 0; i < arraySymbol.length-1; i++) {
+        ArrayOrders orders = new ArrayOrders();
+
+        for (int i = 0; i < arraySymbol.length - 1; i++) {
             orders.add(new Order(arraySymbol[i]));
-            
+
             //orders.get(i).toString();
         }
         xtbApi.insertParaOrders(orders);
 
         for (;;) {
 
-            for (int i = 0; i < arraySymbol.length-1; i++) {
+            for (int i = 0; i < arraySymbol.length - 1; i++) {
+
+                if (monitThread.isAlive()) {
+                    System.out.println("Monit thred runing.");
+
+                } else {
+                    System.out.println("Reset monit thred");
+                    monitThread = xtbApi.StartMonitProfitInThred();
+                }
+
                 if (args.length > 0) {
                     symbol = args[0];
                 } else {
@@ -83,11 +92,11 @@ public class NXtb {
                     }
                 }
 
-                Date dateRange = new Date(new TimeRange().getRange(new Date().getTime(), 5));
+                Date dateRange = new Date(new TimeRange().getRange(new Date().getTime(), 50));
 
                 xtbApi.setMySymbol(symbol);
                 System.out.print("Run " + symbol + " data: " + dateRange);
-                xtbApi.getSymbolData(PERIOD_CODE.PERIOD_M1, dateRange.getTime());
+                xtbApi.getSymbolData(PERIOD_CODE.PERIOD_D1, dateRange.getTime());
 
                 for (int j = 0; j < networkSlave.length - 1; j++) {
 
@@ -117,6 +126,7 @@ public class NXtb {
                         || thredLerniSlave[1].isAlive()
                         || thredLerniSlave[2].isAlive()
                         || thredLerniSlave[3].isAlive())) {
+
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException ex) {
@@ -155,6 +165,12 @@ public class NXtb {
                 xtbApi.TradeTransaction(averageOutput);
 
                 System.out.println("");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
             }
 
         }
