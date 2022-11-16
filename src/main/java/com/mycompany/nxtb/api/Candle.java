@@ -53,6 +53,19 @@ public class Candle extends RateInfoRecord {
         return (super.getHigh() + (getOpen() * mnoznik)) / mnoznik;
     }
 
+    @Override
+    public double getVol() {
+        double volume = super.getVol();
+        for (int i = 0; i < 20; i++) {
+
+            volume = volume / 10;
+            if (volume < getOpen()) {
+                break;
+            }
+        }
+        return volume;
+    }
+
     public String getCloseString() {
         return String.valueOf(this.getClose());
     }

@@ -45,7 +45,7 @@ public class XtbApi {
     private static final String DATA = ".txt";
 
     private final long id = 13983586;
-    private final String password = "i8V.@*%R3RPr461y";
+    private final String password = "i8V.@*%R3RPr46y1";
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
@@ -167,6 +167,12 @@ public class XtbApi {
                                     + candle.getCloseString() + separator
                                     + candle.getHighString() + separator
                                     + candle.getLowString() + separator
+                                    + candle.getVolString()+ separator
+                                    
+                                    
+                                    
+                                    
+                                    
                                     + candleNext.getCloseString() + separator
                                     + System.lineSeparator());
 
@@ -246,7 +252,17 @@ public class XtbApi {
                                         candle.getCloseString() + separator
                                         + candle.getHighString() + separator
                                         + candle.getLowString() + separator
-                                        + candleNext.getCloseString() + separator
+                                        
+ 
+                                        +candleNext.getOpenString() + separator
+                                        + //wejsca
+                                        candleNext.getCloseString() + separator
+                                        + candleNext.getHighString() + separator
+                                        + candleNext.getLowString() + separator
+                                        
+                                        
+                                        
+                                       // + candleNext.getCloseString() + separator
                                         +//wyjscie
                                         System.lineSeparator());
 

@@ -15,7 +15,7 @@ public class Order {
     }
 
     private String symbol;
-    private int maxLimitOreders = 10;
+    private int maxLimitOreders = 1;
     private int limitOrders = 1;
     private double tolerance = 2;
     private double volume = 0.01;

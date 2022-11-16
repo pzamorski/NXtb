@@ -323,12 +323,12 @@ public class NetworkN extends MultiLayerPerceptron {
     public double[] getLastSymbol() {
 
         double[] data = new Memory().loadDouble(symbolName);
-        double[] getLastSymbol = new double[4];
+        double[] getLastSymbol = new double[input];
 
-        getLastSymbol[0] = data[data.length - 5];
-        getLastSymbol[1] = data[data.length - 4];
-        getLastSymbol[2] = data[data.length - 3];
-        getLastSymbol[3] = data[data.length - 2];
+        for (int i = 0; i < getLastSymbol.length; i++) {
+            getLastSymbol[i]=data[data.length - (getLastSymbol.length-i)];
+            
+        }
         return getLastSymbol;
 
     }

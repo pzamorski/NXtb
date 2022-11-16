@@ -40,8 +40,10 @@ public class NXtb {
         String symbol = null;
         boolean nextBuy = false;
 
-        int input = 4;
+        int input = 5;
         int output = 1;
+
+        int inputSlaveNetwork = 10;
         int sizeOFNetworkSlave = 5;
 
         XtbApi xtbApi = new XtbApi();
@@ -98,13 +100,13 @@ public class NXtb {
                 System.out.print("Run " + symbol + " data: " + dateRange);
                 xtbApi.getSymbolData(PERIOD_CODE.PERIOD_D1, dateRange.getTime());
 
-                for (int j = 0; j < networkSlave.length - 1; j++) {
+                for (int j = 0; j < networkSlave.length; j++) {
 
                     System.out.print("Network->" + j + " ");
 
                     averageOutput = 0;
 
-                    networkSlave[j] = new NetworkN(input, 3 * input + 2, output);
+                    networkSlave[j] = new NetworkN(inputSlaveNetwork, 3 * inputSlaveNetwork + 2, output);
                     networkSlave[j].setFileDataTrennig(symbol, NetworkType.TYPE_SLAVE[j]);
                     networkSlave[j].setLearningRate(0.001);
                     networkSlave[j].setMaxError(0.0001);
@@ -148,16 +150,18 @@ public class NXtb {
                     networkMaster.getLernDataSegmen();
                     try {
 
-                        networkMaster.lern(false);
+                        networkMaster.lern();
                     } catch (Exception e) {
                         networkMaster.reset();
                     }
 
-                    double out = networkMaster.inputScaner(new double[]{
-                        networkSlave[0].inputScaner(networkSlave[0].getLastSymbol(), 0),
-                        networkSlave[1].inputScaner(networkSlave[1].getLastSymbol(), 0),
-                        networkSlave[2].inputScaner(networkSlave[2].getLastSymbol(), 0),
-                        networkSlave[3].inputScaner(networkSlave[3].getLastSymbol(), 0),}, 0);
+                    double[] buildDataToInputScaner = new double[networkSlave.length];
+                    for (int k = 0; k < networkSlave.length; k++) {
+                        buildDataToInputScaner[k] = networkSlave[k].inputScaner(networkSlave[k].getLastSymbol(), 0);
+                    }
+                    
+                    double out = networkMaster.inputScaner(buildDataToInputScaner, 0);
+
                     averageOutput = averageOutput + out;
 
                 }
