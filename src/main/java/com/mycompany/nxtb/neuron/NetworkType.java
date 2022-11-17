@@ -15,10 +15,12 @@ public class NetworkType {
     private static final String PRICE_LOW = "L";
     private static final String PRICE_HIGH = "H";
     private static final String VOLUMEN = "V";
+    private static final String PIPSOC = "POC";
+    private static final String PIPSHL = "PHL";
     private static final String MASTER = "M";
-    
-    public static final String[] TYPE_SLAVE = {PRICE_OPEN,PRICE_CLOSE,PRICE_LOW,PRICE_HIGH,VOLUMEN};
-    public static final String[] TYPE_MASTER={MASTER};
+
+    public static final String[] TYPE_SLAVE = {PRICE_OPEN, PRICE_CLOSE, PRICE_LOW, PRICE_HIGH, VOLUMEN, PIPSOC,PIPSHL};
+    public static final String[] TYPE_MASTER = {MASTER};
 
     private String type;
 
@@ -42,6 +44,12 @@ public class NetworkType {
         }
         if (type.equals(VOLUMEN)) {
             sb.append("V.txt");
+        }
+        if (type.equals(PIPSOC)) {
+            sb.append("POC.txt");
+        }
+        if (type.equals(PIPSHL)) {
+            sb.append("PHL.txt");
         }
         if (type.equals(MASTER)) {
             sb.append(".txt");

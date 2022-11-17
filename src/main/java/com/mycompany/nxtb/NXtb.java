@@ -40,12 +40,15 @@ public class NXtb {
         String symbol = null;
         boolean nextBuy = false;
 
-        int input = 5;
-        int output = 1;
+        
 
-        int inputSlaveNetwork = 10;
-        int sizeOFNetworkSlave = 5;
-
+        int inputSlaveNetwork = 20;
+        int sizeOFNetworkSlave = 7;
+        
+        int inputMasterNetwork=sizeOFNetworkSlave;
+        int outputMasterNetwork = 1;
+        
+        
         XtbApi xtbApi = new XtbApi();
 
         NetworkN networkMaster = null;
@@ -106,7 +109,7 @@ public class NXtb {
 
                     averageOutput = 0;
 
-                    networkSlave[j] = new NetworkN(inputSlaveNetwork, 3 * inputSlaveNetwork + 2, output);
+                    networkSlave[j] = new NetworkN(inputSlaveNetwork, 3 * inputSlaveNetwork + 2, outputMasterNetwork);
                     networkSlave[j].setFileDataTrennig(symbol, NetworkType.TYPE_SLAVE[j]);
                     networkSlave[j].setLearningRate(0.001);
                     networkSlave[j].setMaxError(0.0001);
@@ -127,7 +130,10 @@ public class NXtb {
                 while ((thredLerniSlave[0].isAlive()
                         || thredLerniSlave[1].isAlive()
                         || thredLerniSlave[2].isAlive()
-                        || thredLerniSlave[3].isAlive())) {
+                        || thredLerniSlave[3].isAlive()
+                        || thredLerniSlave[4].isAlive()
+                        || thredLerniSlave[5].isAlive()
+                        || thredLerniSlave[6].isAlive())) {
 
                     try {
                         Thread.sleep(100);
@@ -140,7 +146,7 @@ public class NXtb {
                 System.out.println("Network master");
                 for (int j = 0; j < interationNetworkMaster; j++) {
 
-                    networkMaster = new NetworkN(input, 4 * input + 2, output);
+                    networkMaster = new NetworkN(inputMasterNetwork, 4 * inputMasterNetwork + 2, outputMasterNetwork);
                     networkMaster.setFileDataTrennig(symbol, NetworkType.TYPE_MASTER[0]);
                     networkMaster.setLearningRate(0.001);
                     networkMaster.setMaxError(0.001);
@@ -155,12 +161,12 @@ public class NXtb {
                         networkMaster.reset();
                     }
 
-                    double[] buildDataToInputScaner = new double[networkSlave.length];
+                    double[] buildDataToInputMasterScaner = new double[networkSlave.length];
                     for (int k = 0; k < networkSlave.length; k++) {
-                        buildDataToInputScaner[k] = networkSlave[k].inputScaner(networkSlave[k].getLastSymbol(), 0);
+                        buildDataToInputMasterScaner[k] = networkSlave[k].inputScaner(networkSlave[k].getLastSymbol(), 0);
                     }
                     
-                    double out = networkMaster.inputScaner(buildDataToInputScaner, 0);
+                    double out = networkMaster.inputScaner(buildDataToInputMasterScaner, 0);
 
                     averageOutput = averageOutput + out;
 

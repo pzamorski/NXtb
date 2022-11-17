@@ -42,10 +42,12 @@ public class XtbApi {
     private static final String DATA_H = "H.txt";
     private static final String DATA_L = "L.txt";
     private static final String DATA_V = "V.txt";
+    private static final String DATA_POC = "POC.txt";
+    private static final String DATA_PHL = "PHL.txt";
     private static final String DATA = ".txt";
 
     private final long id = 13983586;
-    private final String password = "i8V.@*%R3RPr46y1";
+    private final String password = "i8V.@*%R3RPr46y";
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
     private String lastSymbol;
@@ -109,6 +111,12 @@ public class XtbApi {
                 case DATA_V:
                     returnPathFile.append(type);
                     break;
+                case DATA_POC:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_PHL:
+                    returnPathFile.append(type);
+                    break;
                 case DATA:
                     returnPathFile.append(type);
                     break;
@@ -129,6 +137,8 @@ public class XtbApi {
                         myWriterH = null,
                         myWriterL = null,
                         myWriterV = null,
+                        myWriterPOC = null,
+                        myWriterPHL = null,
                         myWriter = null;
 
                 ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, mySymbol, period_code, time);
@@ -145,6 +155,9 @@ public class XtbApi {
                     myWriterH = new FileWriter(buildPathFile(DATA_H));
                     myWriterL = new FileWriter(buildPathFile(DATA_L));
                     myWriterV = new FileWriter(buildPathFile(DATA_V));
+                    myWriterPOC = new FileWriter(buildPathFile(DATA_POC));
+                    myWriterPHL = new FileWriter(buildPathFile(DATA_PHL));
+                    
                     myWriter = new FileWriter(buildPathFile(DATA));
 
                     System.out.print(mySymbol + " - zapis ");
@@ -162,17 +175,16 @@ public class XtbApi {
                             myWriterH.write(candle.getHighString() + separator);
                             myWriterL.write(candle.getLowString() + separator);
                             myWriterV.write(candle.getVolString() + separator);
+                            myWriterPOC.write(candle.getPipsCoString() + separator);
+                            myWriterPHL.write(candle.getPipsHlString()+ separator);
 
                             myWriter.write(candle.getOpenString() + separator
                                     + candle.getCloseString() + separator
                                     + candle.getHighString() + separator
                                     + candle.getLowString() + separator
-                                    + candle.getVolString()+ separator
-                                    
-                                    
-                                    
-                                    
-                                    
+                                    + candle.getVolString() + separator
+                                    + candle.getPipsCoString() + separator
+                                    + candle.getPipsHlString()+ separator
                                     + candleNext.getCloseString() + separator
                                     + System.lineSeparator());
 
@@ -187,6 +199,8 @@ public class XtbApi {
                     myWriterH.close();
                     myWriterL.close();
                     myWriterV.close();
+                    myWriterPOC.close();
+                    myWriterPHL.close();
                     myWriter.close();
                     System.out.println(" OK" + "[" + rateInfoRecord.size() + "]");
                 }
@@ -252,17 +266,13 @@ public class XtbApi {
                                         candle.getCloseString() + separator
                                         + candle.getHighString() + separator
                                         + candle.getLowString() + separator
-                                        
- 
-                                        +candleNext.getOpenString() + separator
+                                        + candleNext.getOpenString() + separator
                                         + //wejsca
                                         candleNext.getCloseString() + separator
                                         + candleNext.getHighString() + separator
                                         + candleNext.getLowString() + separator
-                                        
-                                        
-                                        
-                                       // + candleNext.getCloseString() + separator
+
+                                        // + candleNext.getCloseString() + separator
                                         +//wyjscie
                                         System.lineSeparator());
 
@@ -312,12 +322,13 @@ public class XtbApi {
         boolean nextBuy = false;
 
         double curentProfit = orders.get(mySymbol).getProfit();
-        
-        if(curentProfit>0.9){orders.get(mySymbol).incrementLimitOrder();}
-        
+
+        if (curentProfit > 2) {
+            orders.get(mySymbol).incrementLimitOrder();
+        }
+
         int limitZleceń = orders.get(mySymbol).geLimitOrders();
         double tolerance = orders.get(mySymbol).getTolerance();
-        
 
         TradeTransInfoRecord ttOpenInfoRecord = null;
 
@@ -328,20 +339,16 @@ public class XtbApi {
         double priceCondition = priceFromNetwork - actualPrice;
 
         System.out.println("Przewidywana cena: " + priceFromNetwork + " Aktualna cena: " + actualPrice);
-        if (curentProfit >= 0) {
-            if (Math.abs(priceCondition) > tolerance) {
-                if (priceFromNetwork > actualPrice) {
-                    ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN);
-                    nextBuy = false;
-                }
+        if (Math.abs(priceCondition) > tolerance) {
+            if (priceFromNetwork > actualPrice) {
+                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN);
+                nextBuy = false;
+            }
 //            if (priceFromNetwork < actualPrice) {
 //                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.SELL, TRADE_TRANSACTION_TYPE.OPEN);
 //            }
-            } else {
-                System.out.println("Tolerancja przekroczona");
-            }
         } else {
-            System.out.println("Aktualny profit < 0");
+            System.out.println("Tolerancja przekroczona");
         }
 
         if (ttOpenInfoRecord != null) {
@@ -354,7 +361,7 @@ public class XtbApi {
                     TradeTransactionResponse tradeTransactionResponse;
 
                     int iloscZlecenDlaSymbolu = 0;
-                    for (int i = 0; i < listTradesResponse.size(); i++) {
+                    for (int i = 0; i < listTradesResponse.size(); i++) {//Sprawdza ilosc aktualnych zlecen
                         TradeRecord get = listTradesResponse.get(i);
                         if (get.getSymbol().equals(mySymbol)) {
                             iloscZlecenDlaSymbolu++;
@@ -369,7 +376,7 @@ public class XtbApi {
 //                            System.out.println("Selling " + mySymbol);
 //                        }
 
-                        tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
+                        tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);//kup
 
                         System.out.println("[" + tradeTransactionResponse.getOrder() + "]");
 
@@ -404,8 +411,9 @@ public class XtbApi {
                             TradeRecord record = listTradesResponse.get(i);
 
                             // if (record.getProfit() > orders.get(mySymbol).getProfit()) {
-                            if (record.getProfit() > 0) {
-                                orders.get(mySymbol).addProfir(record.getProfit());
+                            orders.get(mySymbol).addProfir(record.getProfit());
+                            if (record.getProfit() > 5) {
+                                
 
                                 ttOpenInfoRecord.setOrder(record.getOrder());
                                 ttOpenInfoRecord.setVolume(record.getVolume());

@@ -17,13 +17,26 @@ public class Order {
     private String symbol;
     private int maxLimitOreders = 1;
     private int limitOrders = 1;
-    private double tolerance = 2;
+    private double tolerance = 1;
     private double volume = 0.01;
     private double maxVolume = 0.1;
     private double trigerGetProfut = 0.1;
     private double profit = 0.1;
     private int numerClosedOrders = 0;
+    private boolean edge = false;
+    private double oldPrice=0;
 
+    public void serchMinimumEdge(double actualPrice) {
+        if(actualPrice<oldPrice){
+            
+        }
+        
+        
+    }
+
+    ;
+    
+    
     public void setMaxLimitOrders(int maxLimitOrders) {
         this.maxLimitOreders = maxLimitOrders;
     }
@@ -35,6 +48,10 @@ public class Order {
 
     public void setMaxVolume(double maxVolume) {
         this.maxVolume = maxVolume;
+    }
+
+    public boolean isEdge() {
+        return edge;
     }
 
     public int geLimitOrders() {
@@ -81,9 +98,9 @@ public class Order {
     }
 
     public void incrementLimitOrder() {
-        profit=0;
+        profit = 0;
         if (limitOrders < maxLimitOreders) {
-            
+
             limitOrders = increment(limitOrders);
             System.out.println("Increment limit orders: " + limitOrders + " " + symbol);
         }
@@ -122,11 +139,11 @@ public class Order {
     }
 
     private double increment(double i) {
-        return i=i+0.01;
+        return i = i + 0.01;
     }
 
     private int increment(int i) {
-        return i=i+1;
+        return i = i + 1;
     }
 
     private double decrement(double i) {
