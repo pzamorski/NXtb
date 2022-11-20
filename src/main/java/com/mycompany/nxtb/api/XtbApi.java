@@ -4,6 +4,7 @@
  */
 package com.mycompany.nxtb.api;
 
+import com.mycompany.nxtb.tools.Memory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.math3.util.Precision;
 import pro.xstore.api.message.codes.PERIOD_CODE;
 import pro.xstore.api.message.codes.TRADE_OPERATION_CODE;
 import pro.xstore.api.message.codes.TRADE_TRANSACTION_TYPE;
@@ -45,6 +47,8 @@ public class XtbApi {
     private static final String DATA_POC = "POC.txt";
     private static final String DATA_PHL = "PHL.txt";
     private static final String DATA = ".txt";
+
+    private static final String DATA_CHART = ".csv";
 
     private final long id = 13983586;
     private final String password = "i8V.@*%R3RPr46y1";
@@ -120,6 +124,10 @@ public class XtbApi {
                 case DATA:
                     returnPathFile.append(type);
                     break;
+                case DATA_CHART:
+                    returnPathFile = new StringBuilder("data/csv/" + mySymbol);
+                    returnPathFile.append(type);
+                    break;
             }
         }
         return returnPathFile.toString();
@@ -157,7 +165,7 @@ public class XtbApi {
                     myWriterV = new FileWriter(buildPathFile(DATA_V));
                     myWriterPOC = new FileWriter(buildPathFile(DATA_POC));
                     myWriterPHL = new FileWriter(buildPathFile(DATA_PHL));
-                    
+
                     myWriter = new FileWriter(buildPathFile(DATA));
 
                     System.out.print(mySymbol + " - zapis ");
@@ -176,7 +184,7 @@ public class XtbApi {
                             myWriterL.write(candle.getLowString() + separator);
                             myWriterV.write(candle.getVolString() + separator);
                             myWriterPOC.write(candle.getPipsCoString() + separator);
-                            myWriterPHL.write(candle.getPipsHlString()+ separator);
+                            myWriterPHL.write(candle.getPipsHlString() + separator);
 
                             myWriter.write(candle.getOpenString() + separator
                                     + candle.getCloseString() + separator
@@ -184,7 +192,7 @@ public class XtbApi {
                                     + candle.getLowString() + separator
                                     + candle.getVolString() + separator
                                     + candle.getPipsCoString() + separator
-                                    + candle.getPipsHlString()+ separator
+                                    + candle.getPipsHlString() + separator
                                     + candleNext.getCloseString() + separator
                                     + System.lineSeparator());
 
@@ -308,6 +316,7 @@ public class XtbApi {
             if (checkIsLogin() && checkConditionSymbol()) {
                 SymbolResponse symbolResponse = APICommandFactory.executeSymbolCommand(connector, mySymbol);
                 symbolRecord = symbolResponse.getSymbol();
+
             } else {
                 System.err.println("Error: user couldn't log in!");
             }
@@ -317,36 +326,30 @@ public class XtbApi {
         return symbolRecord;
     }
 
-    public boolean TradeTransaction(double priceFromNetwork) {
+    public void TradeTransaction(double priceFromNetwork,String coment) throws IOException {
 
-        boolean nextBuy = false;
+        Order oreder = orders.get(mySymbol);
+        
+        priceFromNetwork=Precision.round(priceFromNetwork,3);
 
-        double curentProfit = orders.get(mySymbol).getProfit();
-
-        if (curentProfit > 2) {
-            orders.get(mySymbol).incrementLimitOrder();
-        }
-
-        int limitZleceń = orders.get(mySymbol).geLimitOrders();
-        double tolerance = orders.get(mySymbol).getTolerance();
+        double curentProfit = oreder.getProfit();
+        double tolerance = oreder.getTolerance();
+        int limitZleceń = oreder.geLimitOrders();
 
         TradeTransInfoRecord ttOpenInfoRecord = null;
-
         SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
 
-        double actualPrice = symbolRecord.getAsk();
-
+        double actualPrice = symbolRecord.getBid();
         double priceCondition = priceFromNetwork - actualPrice;
 
+        new Memory().saveCSV(buildPathFile(DATA_CHART), priceFromNetwork, actualPrice,coment);
+
         System.out.println("Przewidywana cena: " + priceFromNetwork + " Aktualna cena: " + actualPrice);
+        //System.out.printf(" Przewidywana cena: %.3f  Aktualna cena: %.3f \n", priceFromNetwork,actualPrice); 
         if (Math.abs(priceCondition) > tolerance) {
             if (priceFromNetwork > actualPrice) {
                 ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN);
-                nextBuy = false;
             }
-//            if (priceFromNetwork < actualPrice) {
-//                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.SELL, TRADE_TRANSACTION_TYPE.OPEN);
-//            }
         } else {
             System.out.println("Tolerancja przekroczona");
         }
@@ -362,19 +365,16 @@ public class XtbApi {
 
                     int iloscZlecenDlaSymbolu = 0;
                     for (int i = 0; i < listTradesResponse.size(); i++) {//Sprawdza ilosc aktualnych zlecen
-                        TradeRecord get = listTradesResponse.get(i);
-                        if (get.getSymbol().equals(mySymbol)) {
+                        TradeRecord tradeRecord = listTradesResponse.get(i);
+                        if (tradeRecord.getSymbol().equals(mySymbol)) {
                             iloscZlecenDlaSymbolu++;
                         }
                     }
 
-                    if (iloscZlecenDlaSymbolu <= orders.get(mySymbol).geLimitOrders()) {//nie wiecej jak limitZleceń 
+                    if (iloscZlecenDlaSymbolu <= oreder.geLimitOrders()) {//nie wiecej jak limitZleceń 
                         if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.BUY) {
                             System.out.print("Buying " + mySymbol + " ");
                         }
-//                        if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.SELL) {
-//                            System.out.println("Selling " + mySymbol);
-//                        }
 
                         tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);//kup
 
@@ -390,7 +390,6 @@ public class XtbApi {
         } else {
         }
 
-        return nextBuy;
     }
 
     public void StartMonitProfit() {
@@ -411,9 +410,8 @@ public class XtbApi {
                             TradeRecord record = listTradesResponse.get(i);
 
                             // if (record.getProfit() > orders.get(mySymbol).getProfit()) {
-                            orders.get(mySymbol).addProfir(record.getProfit());
                             if (record.getProfit() > 5) {
-                                
+                                orders.get(mySymbol).addProfir(record.getProfit());
 
                                 ttOpenInfoRecord.setOrder(record.getOrder());
                                 ttOpenInfoRecord.setVolume(record.getVolume());
@@ -480,11 +478,45 @@ public class XtbApi {
         TradeTransInfoRecord ttOpenInfoRecord = new TradeTransInfoRecord(
                 tradeOperattionCode,
                 trade_transaction_type,
-                symbolRecord.getAsk(),
+                symbolRecord.getBid(),
                 sl,
                 tp,
                 symbolRecord.getSymbol(),
                 symbolRecord.getLotMin(),
+                order,
+                customComment,
+                expiration
+        );
+
+        return ttOpenInfoRecord;
+
+    }
+
+    private TradeTransInfoRecord CreateTradeTransInfoRecord(TRADE_OPERATION_CODE tradeOperattionCode, TRADE_TRANSACTION_TYPE trade_transaction_type, int volume) {
+
+        SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
+
+        double sl = 0.0;
+        double tp = 0.0;
+        long order = 0;
+        String customComment = "NXtb";
+        long expiration = 0;
+        double vol;
+
+        if (volume > 0) {
+            vol = symbolRecord.getLotMin() * volume;
+        } else {
+            vol = symbolRecord.getLotMin();
+        }
+
+        TradeTransInfoRecord ttOpenInfoRecord = new TradeTransInfoRecord(
+                tradeOperattionCode,
+                trade_transaction_type,
+                symbolRecord.getBid(),
+                sl,
+                tp,
+                symbolRecord.getSymbol(),
+                vol,
                 order,
                 customComment,
                 expiration
@@ -510,7 +542,28 @@ public class XtbApi {
         return serverTime.getTime();
     }
 
-    public void TradeTransaction2(double priceFromNetwork) {
+    public void checkBuyCondition(double priceFromNetwork, SymbolRecord symbolRecord) {
+
+        double curentProfit = orders.get(mySymbol).getProfit();
+        double tolerance = orders.get(mySymbol).getTolerance();
+        double actualPrice = symbolRecord.getBid();
+        double priceCondition = priceFromNetwork - actualPrice;
+
+        int limitZleceń = orders.get(mySymbol).geLimitOrders();
+
+        TradeTransInfoRecord ttOpenInfoRecord = null;
+
+        if (Math.abs(priceCondition) > tolerance) {
+            if (priceFromNetwork > actualPrice) {
+                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN);
+            }
+        } else {
+            System.out.println("Tolerancja przekroczona");
+        }
+
+    }
+
+    public void buy(double priceFromNetwork) {
 
     }
 

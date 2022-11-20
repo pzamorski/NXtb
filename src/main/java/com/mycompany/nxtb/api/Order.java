@@ -17,26 +17,33 @@ public class Order {
     private String symbol;
     private int maxLimitOreders = 1;
     private int limitOrders = 1;
+
     private double tolerance = 1;
+    private double maxTolerance = 1;
+
     private double volume = 0.01;
     private double maxVolume = 0.1;
+    private double minVolume;
+
     private double trigerGetProfut = 0.1;
     private double profit = 0.1;
     private int numerClosedOrders = 0;
-    private boolean edge = false;
-    private double oldPrice=0;
 
-    public void serchMinimumEdge(double actualPrice) {
-        if(actualPrice<oldPrice){
-            
+    private double minPrice = 0;
+
+    public boolean serchMinPrice(double currentPrice) {
+        boolean priceMinCondition = false;
+        if (minPrice == 0) {
+            minPrice = currentPrice;
+        } else if (minPrice >= currentPrice) {
+            minPrice = currentPrice;
         }
-        
-        
+        if(minPrice<=currentPrice){priceMinCondition = true;
+        minPrice=0;}
+        return priceMinCondition;
+
     }
 
-    ;
-    
-    
     public void setMaxLimitOrders(int maxLimitOrders) {
         this.maxLimitOreders = maxLimitOrders;
     }
@@ -48,10 +55,6 @@ public class Order {
 
     public void setMaxVolume(double maxVolume) {
         this.maxVolume = maxVolume;
-    }
-
-    public boolean isEdge() {
-        return edge;
     }
 
     public int geLimitOrders() {

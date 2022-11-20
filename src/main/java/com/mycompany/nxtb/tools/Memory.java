@@ -4,11 +4,14 @@
  */
 package com.mycompany.nxtb.tools;
 
+import com.mycompany.nxtb.api.XtbApi;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -36,6 +39,27 @@ public class Memory {
 
     }
 
+    public void saveAppend(String src, double priceNetwork, double priceApi,String coment) throws IOException {
+        String temp = new Memory().loadStringString(src);
+
+        FileWriter myWritter = new FileWriter(src);
+
+        String priceNetworkString=String.valueOf(priceNetwork).replace(".", ",");
+        String priceApiString=String.valueOf(priceApi).replace(".", ",");
+        
+        
+        if (temp != null) {
+            if (!temp.contains("null")) {
+                myWritter.append(temp);
+            }
+        }
+        
+        
+        myWritter.write(priceNetworkString + ";" + priceApiString+";"+coment);
+        myWritter.close();
+
+    }
+
     public void save(String src, int[] data) throws IOException {
         FileWriter myWritter = new FileWriter(src);
         for (int i = 0; i < data.length; i++) {
@@ -44,6 +68,18 @@ public class Memory {
         System.out.println("Save[" + src + "]");
         myWritter.close();
 
+    }
+    
+    public void saveCSV(String src,double priceFromNetwork,double actualPrice,String coment) throws IOException{
+    
+            File dataDir = new File("data/csv");
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
+        }
+
+            new Memory().saveAppend(src, priceFromNetwork, actualPrice,coment);
+
+    
     }
 
     public double[] loadDouble(String src) {
@@ -66,7 +102,7 @@ public class Memory {
 
                 arrayLoad[i] = Double.valueOf(arrayTemp[i]);
             }
-           // System.out.println("Load[" + src + "]");
+            // System.out.println("Load[" + src + "]");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -93,7 +129,7 @@ public class Memory {
 
                 arrayLoad[i] = Integer.valueOf(arrayTemp[i]);
             }
-           // System.out.println("Load[" + src + "]");
+            // System.out.println("Load[" + src + "]");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -125,6 +161,32 @@ public class Memory {
             e.printStackTrace();
         }
         return arrayLoad;
+    }
+
+    public String loadStringString(String src) {
+        String Load = null;
+        BufferedReader br;
+        FileReader fr;
+        try {
+            File file = new File(src);
+
+            if (file.exists()) {
+                fr = new FileReader(file);
+                br = new BufferedReader(fr);
+                StringBuffer sb = new StringBuffer();
+                String line;
+
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                    sb.append(System.lineSeparator());
+                }
+                fr.close();
+                Load = sb.toString();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Load;
     }
 
 }

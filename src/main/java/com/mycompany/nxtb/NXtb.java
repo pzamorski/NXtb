@@ -40,15 +40,15 @@ public class NXtb {
         String symbol = null;
         boolean nextBuy = false;
 
-        
-
-        int inputSlaveNetwork = 20;
+        int inputSlaveNetwork = 7;
         int sizeOFNetworkSlave = 7;
-        
-        int inputMasterNetwork=sizeOFNetworkSlave;
+
+        int inputMasterNetwork = sizeOFNetworkSlave;
         int outputMasterNetwork = 1;
         
-        
+        PERIOD_CODE periodCode = PERIOD_CODE.PERIOD_H4;
+        int dayBackRange = 25;
+
         XtbApi xtbApi = new XtbApi();
 
         NetworkN networkMaster = null;
@@ -64,14 +64,12 @@ public class NXtb {
 
         for (int i = 0; i < arraySymbol.length - 1; i++) {
             orders.add(new Order(arraySymbol[i]));
-
-            //orders.get(i).toString();
         }
         xtbApi.insertParaOrders(orders);
 
         for (;;) {
 
-            for (int i = 0; i < arraySymbol.length - 1; i++) {
+            for (int i = 0; i < arraySymbol.length - 6; i++) {///////////////////////////////////////////////////////////
 
                 if (monitThread.isAlive()) {
                     System.out.println("Monit thred runing.");
@@ -86,22 +84,15 @@ public class NXtb {
                 } else {
                     symbol = arraySymbol[i];
                     if (symbol == null) {
-
-                        try {
-                            Thread.sleep(120000);
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-
                         break;
                     }
                 }
 
-                Date dateRange = new Date(new TimeRange().getRange(new Date().getTime(), 50));
+                Date dateRange = new Date(new TimeRange().getRange(new Date().getTime(), dayBackRange));
 
                 xtbApi.setMySymbol(symbol);
                 System.out.print("Run " + symbol + " data: " + dateRange);
-                xtbApi.getSymbolData(PERIOD_CODE.PERIOD_D1, dateRange.getTime());
+                xtbApi.getSymbolData(periodCode, dateRange.getTime());
 
                 for (int j = 0; j < networkSlave.length; j++) {
 
@@ -111,8 +102,8 @@ public class NXtb {
 
                     networkSlave[j] = new NetworkN(inputSlaveNetwork, 3 * inputSlaveNetwork + 2, outputMasterNetwork);
                     networkSlave[j].setFileDataTrennig(symbol, NetworkType.TYPE_SLAVE[j]);
-                    networkSlave[j].setLearningRate(0.001);
-                    networkSlave[j].setMaxError(0.0001);
+                    networkSlave[j].setLearningRate(0.01);
+                    networkSlave[j].setMaxError(0.01);
                     networkSlave[j].setMaxIteration(120000);
                     networkSlave[j].setMomentumChange(10);
                     networkSlave[j].setMaxMomentum(10);
@@ -127,25 +118,27 @@ public class NXtb {
                 }
 //-------------------------------------------------------------------------------
                 //network master
-                while ((thredLerniSlave[0].isAlive()
-                        || thredLerniSlave[1].isAlive()
-                        || thredLerniSlave[2].isAlive()
-                        || thredLerniSlave[3].isAlive()
-                        || thredLerniSlave[4].isAlive()
-                        || thredLerniSlave[5].isAlive()
-                        || thredLerniSlave[6].isAlive())) {
 
+                boolean thredIsAlive;
+                do {
+                    thredIsAlive = false;
+                    thredLerniSlave[0].isAlive();
+
+                    for (int j = 0; j < thredLerniSlave.length; j++) {
+                        thredIsAlive = (thredIsAlive || thredLerniSlave[j].isAlive());
+
+                    }
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(500);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                }
+
+                } while (thredIsAlive);
 
                 int interationNetworkMaster = 50;
                 System.out.println("Network master");
                 for (int j = 0; j < interationNetworkMaster; j++) {
-
                     networkMaster = new NetworkN(inputMasterNetwork, 4 * inputMasterNetwork + 2, outputMasterNetwork);
                     networkMaster.setFileDataTrennig(symbol, NetworkType.TYPE_MASTER[0]);
                     networkMaster.setLearningRate(0.001);
@@ -165,21 +158,20 @@ public class NXtb {
                     for (int k = 0; k < networkSlave.length; k++) {
                         buildDataToInputMasterScaner[k] = networkSlave[k].inputScaner(networkSlave[k].getLastSymbol(), 0);
                     }
-                    
+
                     double out = networkMaster.inputScaner(buildDataToInputMasterScaner, 0);
 
                     averageOutput = averageOutput + out;
 
                 }
                 averageOutput = (averageOutput / interationNetworkMaster);
-                xtbApi.TradeTransaction(averageOutput);
+                xtbApi.TradeTransaction(averageOutput, "inputSlaveNetwork=" + inputSlaveNetwork
+                        + " ;dayBackRange:" + dayBackRange
+                        + " ;interationNetworkMaster:" + interationNetworkMaster
+                        +" ;periodCode"+periodCode
+                );
 
                 System.out.println("");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
-                }
 
             }
 

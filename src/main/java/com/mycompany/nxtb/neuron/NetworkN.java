@@ -488,8 +488,9 @@ public class NetworkN extends MultiLayerPerceptron {
             int curentIteration = bp.getCurrentIteration();
             if (curentIteration % 5000 == 0 || curentIteration == 1) {
                 double Error = bp.getTotalNetworkError();
-
-                //System.out.printf("I: %d/%d E: %.6f/%.6f M: %.0f/%.0f \n", curentIteration, bp.getMaxIterations(), bp.getTotalNetworkError(), bp.getMaxError(), bp.getMomentum() * 1.0E6, bp.getMaxMomentum() * 1.0E6);
+                
+                //System.out.println();
+                //System.out.printf(" I: %d/%d E: %.6f/%.6f M: %.0f/%.0f \n", curentIteration, bp.getMaxIterations(), bp.getTotalNetworkError(), bp.getMaxError(), bp.getMomentum() * 1.0E6, bp.getMaxMomentum() * 1.0E6);
 
             }
         }
