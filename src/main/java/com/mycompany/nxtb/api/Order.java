@@ -18,10 +18,10 @@ public class Order {
     private int maxLimitOreders = 1;
     private int limitOrders = 1;
 
-    private double tolerance = 1;
-    private double maxTolerance = 1;
+    private double tolerance = 2;
+    private double maxTolerance = 5;
 
-    private double volume = 0.01;
+    private double volume = 0.02;
     private double maxVolume = 0.1;
     private double minVolume;
 

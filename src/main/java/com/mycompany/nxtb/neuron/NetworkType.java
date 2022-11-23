@@ -19,7 +19,8 @@ public class NetworkType {
     private static final String PIPSHL = "PHL";
     private static final String MASTER = "M";
 
-    public static final String[] TYPE_SLAVE = {PRICE_OPEN, PRICE_CLOSE, PRICE_LOW, PRICE_HIGH, VOLUMEN, PIPSOC,PIPSHL};
+    public static final String[] TYPE_SLAVE = {PRICE_OPEN, PRICE_CLOSE, PRICE_LOW, PRICE_HIGH};
+//    public static final String[] TYPE_SLAVE = {PRICE_OPEN, PRICE_CLOSE, PRICE_LOW, PRICE_HIGH, VOLUMEN, PIPSOC,PIPSHL};
     public static final String[] TYPE_MASTER = {MASTER};
 
     private String type;

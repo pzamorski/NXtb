@@ -40,14 +40,14 @@ public class NXtb {
         String symbol = null;
         boolean nextBuy = false;
 
-        int inputSlaveNetwork = 7;
-        int sizeOFNetworkSlave = 7;
+        int inputSlaveNetwork = 1;
+        int sizeOFNetworkSlave = 4;
 
         int inputMasterNetwork = sizeOFNetworkSlave;
         int outputMasterNetwork = 1;
         
-        PERIOD_CODE periodCode = PERIOD_CODE.PERIOD_H4;
-        int dayBackRange = 25;
+        PERIOD_CODE periodCode = PERIOD_CODE.PERIOD_M15;
+        int dayBackRange = 20;
 
         XtbApi xtbApi = new XtbApi();
 
@@ -69,7 +69,7 @@ public class NXtb {
 
         for (;;) {
 
-            for (int i = 0; i < arraySymbol.length - 6; i++) {///////////////////////////////////////////////////////////
+            for (int i = 0; i < arraySymbol.length - 1; i++) {
 
                 if (monitThread.isAlive()) {
                     System.out.println("Monit thred runing.");
@@ -103,10 +103,10 @@ public class NXtb {
                     networkSlave[j] = new NetworkN(inputSlaveNetwork, 3 * inputSlaveNetwork + 2, outputMasterNetwork);
                     networkSlave[j].setFileDataTrennig(symbol, NetworkType.TYPE_SLAVE[j]);
                     networkSlave[j].setLearningRate(0.01);
-                    networkSlave[j].setMaxError(0.01);
+                    networkSlave[j].setMaxError(0.001);
                     networkSlave[j].setMaxIteration(120000);
-                    networkSlave[j].setMomentumChange(10);
-                    networkSlave[j].setMaxMomentum(10);
+                    networkSlave[j].setMomentumChange(100);
+                    networkSlave[j].setMaxMomentum(100);
                     networkSlave[j].getLernDataTimeSeries();
 
                     try {
@@ -154,6 +154,8 @@ public class NXtb {
                         networkMaster.reset();
                     }
 
+                    
+                    
                     double[] buildDataToInputMasterScaner = new double[networkSlave.length];
                     for (int k = 0; k < networkSlave.length; k++) {
                         buildDataToInputMasterScaner[k] = networkSlave[k].inputScaner(networkSlave[k].getLastSymbol(), 0);

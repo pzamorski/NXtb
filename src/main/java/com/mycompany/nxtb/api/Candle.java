@@ -4,6 +4,7 @@
  */
 package com.mycompany.nxtb.api;
 
+import org.apache.commons.math3.util.Precision;
 import pro.xstore.api.message.records.RateInfoRecord;
 
 /**
@@ -35,22 +36,22 @@ public class Candle extends RateInfoRecord {
             }
         }
 
-        return super.getOpen() / mnoznik;
+        return Precision.round(super.getOpen() / mnoznik,5);
     }
 
     @Override
     public double getClose() {
-        return (super.getClose() + (getOpen() * mnoznik)) / mnoznik;
+        return Precision.round((super.getClose() + (getOpen() * mnoznik)) / mnoznik,5);
     }
 
     @Override
     public double getLow() {
-        return (super.getLow() + (getOpen() * mnoznik)) / mnoznik;
+        return Precision.round((super.getLow() + (getOpen() * mnoznik)) / mnoznik,5);
     }
 
     @Override
     public double getHigh() {
-        return (super.getHigh() + (getOpen() * mnoznik)) / mnoznik;
+        return Precision.round((super.getHigh() + (getOpen() * mnoznik)) / mnoznik,5);
     }
 
     @Override
@@ -63,6 +64,7 @@ public class Candle extends RateInfoRecord {
                 break;
             }
         }
+        volume=Precision.round(volume,5);
         return volume;
     }
 
@@ -87,11 +89,12 @@ public class Candle extends RateInfoRecord {
     }
 
     public double getPipsCO() {
-        return this.getClose() - getOpen();
+        
+        return Precision.round(this.getClose() - getOpen(),5);
     }
 
     public double getPipsHL() {
-        return getHigh() - getClose();
+        return Precision.round(getHigh() - getLow(),5); 
     }
 
     public String getPipsCoString() {
