@@ -29,12 +29,22 @@ public class Memory {
 
     }
 
-    public void save(String src, Double[] data) throws IOException {
+    public void save(String src, double[] data) throws IOException {
         FileWriter myWritter = new FileWriter(src);
         for (int i = 0; i < data.length; i++) {
             myWritter.write(String.valueOf(data[i]) + separator);
         }
         System.out.println("Save[" + src + "]");
+        myWritter.close();
+
+    }
+    
+        public void save(String src, Double[] data) throws IOException {
+        FileWriter myWritter = new FileWriter(src);
+        for (int i = 0; i < data.length; i++) {
+            myWritter.write(String.valueOf(data[i]) + separator);
+        }
+        //System.out.println("Save[" + src + "]");
         myWritter.close();
 
     }
@@ -56,6 +66,25 @@ public class Memory {
         
         
         myWritter.write(priceNetworkString + ";" + priceApiString+";"+coment);
+        myWritter.close();
+
+    }
+        public void saveAppend(String src, double toChar) throws IOException {
+        String temp = new Memory().loadStringString(src);
+
+        FileWriter myWritter = new FileWriter(src);
+
+        String stringToChar=String.valueOf(toChar).replace(".", ",");
+        
+        
+        if (temp != null) {
+            if (!temp.contains("null")) {
+                myWritter.append(temp);
+            }
+        }
+        
+        
+        myWritter.write(stringToChar + ";");
         myWritter.close();
 
     }
@@ -81,8 +110,20 @@ public class Memory {
 
     
     }
+        public void saveCSV(String src,double toChar) throws IOException{
+    
+            File dataDir = new File("data/csv");
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
+        }
+
+            new Memory().saveAppend("data/csv/"+src+".csv", toChar);
+
+    
+    }
 
     public double[] loadDouble(String src) {
+        
         double[] arrayLoad = null;
         try {
             File file = new File(src);
@@ -102,7 +143,7 @@ public class Memory {
 
                 arrayLoad[i] = Double.valueOf(arrayTemp[i]);
             }
-            // System.out.println("Load[" + src + "]");
+             //System.out.println("Load[" + src + "]");
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -20,9 +20,9 @@ public class ArrayOrders extends ArrayList<Order> {
             }
 
         }
+    
+            return this.get(index);
 
-        return this.get(index);
     }
-
 
 }

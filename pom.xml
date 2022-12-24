@@ -50,6 +50,12 @@
     
     
     <dependencies>
+        
+        
+        
+        
+        
+        
                 <dependency>
             <groupId>com.github.neuroph</groupId>
             <artifactId>Neuroph</artifactId>

@@ -4,6 +4,8 @@
  */
 package com.mycompany.nxtb.api;
 
+import com.mycompany.nxtb.tools.Average;
+
 /**
  *
  * @author warsztat
@@ -14,34 +16,81 @@ public class Order {
         this.symbol = symbol;
     }
 
+    private Average averageCurrentPOC = new Average(5);
+
+    private double currentPOC = 0;
+    private double openPozytionPOC = 0;
+
     private String symbol;
     private int maxLimitOreders = 1;
-    private int limitOrders = 1;
+    private int limitOrders = 0;
 
-    private double tolerance = 2;
-    private double maxTolerance = 5;
+    private double tolerance = 0;
 
-    private double volume = 0.02;
-    private double maxVolume = 0.1;
-    private double minVolume;
+    private double volume = 0.01;
+    private double maxVolume = 0.01;
 
     private double trigerGetProfut = 0.1;
-    private double profit = 0.1;
+    private double profit = 0.0;
     private int numerClosedOrders = 0;
 
-    private double minPrice = 0;
+    private double maxProfit = 0;
 
-    public boolean serchMinPrice(double currentPrice) {
-        boolean priceMinCondition = false;
-        if (minPrice == 0) {
-            minPrice = currentPrice;
-        } else if (minPrice >= currentPrice) {
-            minPrice = currentPrice;
+    private double maxPrice = 0, minPrice = 999.999;
+
+    public boolean getMinPriceToBuy(double actualPrice) {
+        if (minPrice > actualPrice) {
+            minPrice = actualPrice;
         }
-        if(minPrice<=currentPrice){priceMinCondition = true;
-        minPrice=0;}
-        return priceMinCondition;
+        return minPrice < actualPrice;
+    }
 
+    public boolean getMaxPriceToSell(double actualPrice) {
+        if (maxPrice < actualPrice) {
+            maxPrice = actualPrice;
+        }
+        return maxPrice > actualPrice;
+    }
+
+    public boolean getMaxProfit(double curentProfit) {
+
+        int pecenTriger = 15;
+        if (curentProfit < -2) {
+            limitOrders = 0;
+        }
+
+        if (maxProfit < curentProfit) {
+            maxProfit = curentProfit;
+        }
+
+        double percentDownProfit = 100 - (curentProfit * 100 / maxProfit);
+
+        if ((maxProfit > curentProfit) && curentProfit > 0) {
+            incrementLimitOrder();
+        }
+
+        return (percentDownProfit > pecenTriger) && curentProfit > 1;
+    }
+
+    public double getCurrentPOC() {
+        return currentPOC;
+    }
+
+    public double getAveragePOC() {
+        return averageCurrentPOC.getAverage();
+    }
+
+    public void setCurrentPOC(double currentPOC) {
+        averageCurrentPOC.setAverage(currentPOC);
+        this.currentPOC = currentPOC;
+    }
+
+    public double getOpenPozytionPOC() {
+        return openPozytionPOC;
+    }
+
+    public void setOpenPozytionPOC(double openPozytionPOC) {
+        this.openPozytionPOC = openPozytionPOC;
     }
 
     public void setMaxLimitOrders(int maxLimitOrders) {
@@ -101,16 +150,20 @@ public class Order {
     }
 
     public void incrementLimitOrder() {
-        profit = 0;
+
         if (limitOrders < maxLimitOreders) {
 
             limitOrders = increment(limitOrders);
-            System.out.println("Increment limit orders: " + limitOrders + " " + symbol);
+            // System.out.println("Increment limit orders to: " + limitOrders + " " + symbol);
         }
     }
 
     public void decrementLimitOrder() {
-        limitOrders = decrement(limitOrders);
+        if (limitOrders != 1) {
+
+            limitOrders = decrement(limitOrders);
+            System.out.println("Decrement limit orders to: " + limitOrders + " " + symbol);
+        }
     }
 
     public void incerementTolerance() {
@@ -133,7 +186,6 @@ public class Order {
 
     public void incrementNumerClosedOrders() {
         numerClosedOrders = increment(numerClosedOrders);
-        System.out.println("Increment numer close order: " + numerClosedOrders + " " + symbol);
     }
 
     public void addProfir(double p) {

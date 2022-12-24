@@ -4,24 +4,26 @@
  */
 package com.mycompany.nxtb;
 
-import com.mycompany.nxtb.api.ArrayOrders;
-import com.mycompany.nxtb.api.Order;
-import com.mycompany.nxtb.neuron.NetworkN;
-import com.mycompany.nxtb.neuron.NetworkType;
-import com.mycompany.nxtb.tools.Memory;
 import com.mycompany.nxtb.tools.TimeRange;
 import com.mycompany.nxtb.api.XtbApi;
+import com.mycompany.nxtb.neuron.CreateModel;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.math3.util.Precision;
+import org.neuroph.core.NeuralNetwork;
+import org.neuroph.util.Neuroph;
 import pro.xstore.api.message.codes.PERIOD_CODE;
 import pro.xstore.api.message.error.APICommandConstructionException;
 import pro.xstore.api.message.error.APICommunicationException;
@@ -34,151 +36,245 @@ import pro.xstore.api.message.response.APIErrorResponse;
  */
 public class NXtb {
 
-    public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse {
+    public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse, Exception {
 
-        String arraySymbol[] = new Memory().loadString("symbol.txt");
-        String symbol = null;
-        boolean nextBuy = false;
+        boolean xtb = true;
+        boolean lernLocalData = false;
+        boolean start=false;
 
-        int inputSlaveNetwork = 1;
-        int sizeOFNetworkSlave = 4;
-
-        int inputMasterNetwork = sizeOFNetworkSlave;
-        int outputMasterNetwork = 1;
+        System.out.println("V:" + Neuroph.getVersion() + ".3.1");
         
-        PERIOD_CODE periodCode = PERIOD_CODE.PERIOD_M15;
-        int dayBackRange = 20;
+        PERIOD_CODE periodCode = PERIOD_CODE.PERIOD_M1;
+        long periodCodeInMiliSekund=periodCode.getCode()*60000;
+        String symbol = null;
+        
+        int numberCandleToInput = 5;
+        int sizeDownload = 40000;
+        long timeDownload=(periodCodeInMiliSekund*sizeDownload)+(numberCandleToInput*periodCodeInMiliSekund);
+ 
+        int inputNetwork = numberCandleToInput * 3;
+        int outputNetwork = 1;
+        double[] out = new double[outputNetwork];
+        symbol = "USDJPY";
+        double[] InsertDataToInputScaner = new double[inputNetwork];
 
-        XtbApi xtbApi = new XtbApi();
-
-        NetworkN networkMaster = null;
-        NetworkN[] networkSlave = new NetworkN[sizeOFNetworkSlave];
-        Thread[] thredLerniSlave = new Thread[sizeOFNetworkSlave];
-        double averageOutput = 0;
-
-        xtbApi.login();
-        xtbApi.setMySymbol(symbol);
-        Thread monitThread = xtbApi.StartMonitProfitInThred();
-
-        ArrayOrders orders = new ArrayOrders();
-
-        for (int i = 0; i < arraySymbol.length - 1; i++) {
-            orders.add(new Order(arraySymbol[i]));
+        
+        
+       
+        
+        
+        //Thread monitThread = xtbApi.StartMonitProfitInThred();
+        if (xtb) {
+            XtbApi xtbApi = new XtbApi();
+            xtbApi.setMySymbol(symbol);
+            xtbApi.login();
+            
+            /////////////////////////////////////
+            xtbApi.createFile(
+                    symbol,
+                    sizeDownload,
+                    numberCandleToInput,
+                    periodCode,
+                    //new Date(new TimeRange().getRange(timeDownload)).getTime(),
+                    timeDownload,
+                    inputNetwork,
+                    outputNetwork);
+            xtbApi.logout();
         }
-        xtbApi.insertParaOrders(orders);
+        
+        NeuralNetwork neuralNetwork;
+        CreateModel cm = new CreateModel(symbol, inputNetwork, outputNetwork,periodCode);
+        
+        
 
+        if(lernLocalData){
+        cm.lernFromFile();
+        }
+        
+
+        
+        if(start){
+             XtbApi xtbApi = new XtbApi();
+            xtbApi.setMySymbol(symbol);
+            xtbApi.login();
+            
+            neuralNetwork=new CreateModel().loadModel(symbol);
+            
         for (;;) {
 
-            for (int i = 0; i < arraySymbol.length - 1; i++) {
+            if (59 - new Date(xtbApi.getServerTime()).getSeconds() == 59) {
+                double[] ret = xtbApi.getLastCandles(periodCode, new Date().getTime() - (numberCandleToInput * 60000), inputNetwork);//15000000 ofset dla minut
+                if (!Arrays.equals(ret, InsertDataToInputScaner)) {
 
-                if (monitThread.isAlive()) {
-                    System.out.println("Monit thred runing.");
-
-                } else {
-                    System.out.println("Reset monit thred");
-                    monitThread = xtbApi.StartMonitProfitInThred();
+                    InsertDataToInputScaner = ret;
+                    neuralNetwork.setInput(ret);
+                    neuralNetwork.calculate();
+                    out = neuralNetwork.getOutput();
+                    out[0] = Precision.round(out[0], 6);
+                    System.out.println(new Date(xtbApi.getServerTime()) + " out: " + out[0]);
                 }
-
-                if (args.length > 0) {
-                    symbol = args[0];
-                } else {
-                    symbol = arraySymbol[i];
-                    if (symbol == null) {
-                        break;
-                    }
-                }
-
-                Date dateRange = new Date(new TimeRange().getRange(new Date().getTime(), dayBackRange));
-
-                xtbApi.setMySymbol(symbol);
-                System.out.print("Run " + symbol + " data: " + dateRange);
-                xtbApi.getSymbolData(periodCode, dateRange.getTime());
-
-                for (int j = 0; j < networkSlave.length; j++) {
-
-                    System.out.print("Network->" + j + " ");
-
-                    averageOutput = 0;
-
-                    networkSlave[j] = new NetworkN(inputSlaveNetwork, 3 * inputSlaveNetwork + 2, outputMasterNetwork);
-                    networkSlave[j].setFileDataTrennig(symbol, NetworkType.TYPE_SLAVE[j]);
-                    networkSlave[j].setLearningRate(0.01);
-                    networkSlave[j].setMaxError(0.001);
-                    networkSlave[j].setMaxIteration(120000);
-                    networkSlave[j].setMomentumChange(100);
-                    networkSlave[j].setMaxMomentum(100);
-                    networkSlave[j].getLernDataTimeSeries();
-
-                    try {
-
-                        thredLerniSlave[j] = networkSlave[j].lernThred();
-                    } catch (Exception e) {
-                        networkSlave[j].reset();
-                    }
-                }
-//-------------------------------------------------------------------------------
-                //network master
-
-                boolean thredIsAlive;
-                do {
-                    thredIsAlive = false;
-                    thredLerniSlave[0].isAlive();
-
-                    for (int j = 0; j < thredLerniSlave.length; j++) {
-                        thredIsAlive = (thredIsAlive || thredLerniSlave[j].isAlive());
-
-                    }
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-
-                } while (thredIsAlive);
-
-                int interationNetworkMaster = 50;
-                System.out.println("Network master");
-                for (int j = 0; j < interationNetworkMaster; j++) {
-                    networkMaster = new NetworkN(inputMasterNetwork, 4 * inputMasterNetwork + 2, outputMasterNetwork);
-                    networkMaster.setFileDataTrennig(symbol, NetworkType.TYPE_MASTER[0]);
-                    networkMaster.setLearningRate(0.001);
-                    networkMaster.setMaxError(0.001);
-                    networkMaster.setMaxIteration(120000);
-                    networkMaster.setMomentumChange(1);
-                    networkMaster.setMaxMomentum(1);
-                    networkMaster.getLernDataSegmen();
-                    try {
-
-                        networkMaster.lern();
-                    } catch (Exception e) {
-                        networkMaster.reset();
-                    }
-
-                    
-                    
-                    double[] buildDataToInputMasterScaner = new double[networkSlave.length];
-                    for (int k = 0; k < networkSlave.length; k++) {
-                        buildDataToInputMasterScaner[k] = networkSlave[k].inputScaner(networkSlave[k].getLastSymbol(), 0);
-                    }
-
-                    double out = networkMaster.inputScaner(buildDataToInputMasterScaner, 0);
-
-                    averageOutput = averageOutput + out;
-
-                }
-                averageOutput = (averageOutput / interationNetworkMaster);
-                xtbApi.TradeTransaction(averageOutput, "inputSlaveNetwork=" + inputSlaveNetwork
-                        + " ;dayBackRange:" + dayBackRange
-                        + " ;interationNetworkMaster:" + interationNetworkMaster
-                        +" ;periodCode"+periodCode
-                );
-
-                System.out.println("");
-
             }
 
+            // Thread.sleep(1000);
+        }}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//        for (;;) {
+//
+////----------------------------------get data
+//            symbol = "ELROND";
+//            orders.add(new Order(symbol));
+//            
+//            xtbApi.setMySymbol(symbol);
+//
+//            //xtbApi.getCandlesDataToFile(symbol, PERIOD_CODE.PERIOD_M30, dateRange.getTime());
+////-------------------------------------------------------------------------------
+//            //network master
+//            double outNetwork = 0;
+//
+//            if (!lern) {
+//
+//                dateRange = new Date(new TimeRange().getRange(new Date().getTime(), dayBackRange));
+//                System.out.print("Run " + symbol + " data: " + dateRange);
+//                xtbApi.getCandlesDataToFile(symbol, periodCode, dateRange.getTime());//15000000 ofset dla minut
+//
+//                networkMaster = new NetworkN(inputNetwork, 2 * inputNetwork+6, outputNetwork);
+//                networkMaster.setFileDataTrennig(symbol, NetworkType.TYPE_MASTER[0]);
+//                networkMaster.setDefaultParameter();
+//                networkMaster.getLernDataSegmen();
+//                //networkMaster.setData();
+//                try {
+//                    networkMaster.lern(true);
+//                    //networkMaster.setWeight();
+//                } catch (Exception e) {
+//                    networkMaster.reset();
+//                }
+//                lern = true;
+//
+//            }
+//
+//            //System.out.println(symbol+" RSI:  "+new RSI(symbol).getCurrentRSI());
+//            dateRange = new Date(new TimeRange().getRange(new Date().getTime(), 0));
+//            //System.out.print("Run " + symbol + " data: " + dateRange);
+//            //networkMaster.getLernDataSegmen();
+//            try {
+//                Thread.sleep(10000);
+//            } catch (InterruptedException ex) {
+//                Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//
+//            double[] ret = xtbApi.getLastCandles(periodCode, new Date().getTime() - 99200000);//15000000 ofset dla minut
+//
+//            if (!Arrays.equals(ret, InsertDataToInputScaner)) {
+//
+//                InsertDataToInputScaner = ret;
+//                //networkMaster.selfTest(true);
+//                outNetwork = networkMaster.inputScaner(InsertDataToInputScaner, 0);
+//                outNetwork = Precision.round(outNetwork, 4);
+//
+//                xtbApi.TradeTransactionV3(outNetwork, "");
+//                System.out.println("");
+//            }
+//
+//        }
+    }
+
+    
+    
+  private static int calculateNumberOfDaysBetween(Date startDate, Date endDate) {
+    if (startDate.after(endDate)) {
+        throw new IllegalArgumentException("End date should be grater or equals to start date");
+    }
+
+    long startDateTime = startDate.getTime();
+    long endDateTime = endDate.getTime();
+    long milPerDay = 1000*60*60*24; 
+    
+    int freeDey=0;
+
+    int numOfDays = (int) ((endDateTime - startDateTime) / milPerDay); // calculate vacation duration in days
+System.out.println("numberOFDays "+numOfDays);
+      for (int i = 0; i < numOfDays; i++) {
+          if(numOfDays%6==0||numOfDays%7==0){
+          freeDey++;
+          }
+      }
+    
+    return freeDey+1; // add one day to include start date in interval
+}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    private static void Sleep(PERIOD_CODE period_code) {
+        if (period_code == PERIOD_CODE.PERIOD_M1) {
+            try {
+                Thread.sleep(1000);//30sekund
+            } catch (InterruptedException ex) {
+                Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        if (period_code == PERIOD_CODE.PERIOD_M5) {
+            try {
+                Thread.sleep(200000);//
+            } catch (InterruptedException ex) {
+                Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        if (period_code == PERIOD_CODE.PERIOD_M15) {
+            try {
+                Thread.sleep(600000);//10 minut
+            } catch (InterruptedException ex) {
+                Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        if (period_code == PERIOD_CODE.PERIOD_M30) {
+            try {
+                Thread.sleep(1500000);//25 minut
+            } catch (InterruptedException ex) {
+                Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        if (period_code == PERIOD_CODE.PERIOD_H1) {
+            try {
+                Thread.sleep(3000000);//50 minut
+            } catch (InterruptedException ex) {
+                Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        if (period_code == PERIOD_CODE.PERIOD_H4) {
+            try {
+                Thread.sleep(10800000 + 3000000);//3h50 minut
+            } catch (InterruptedException ex) {
+                Logger.getLogger(NXtb.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
     }
 
+
+    
+    
 }

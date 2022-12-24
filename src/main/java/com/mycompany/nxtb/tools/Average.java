@@ -6,6 +6,7 @@ package com.mycompany.nxtb.tools;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.math3.util.Precision;
 
 /**
  *
@@ -20,22 +21,29 @@ public class Average {
 
     public Average(int size) {
         this.size = size;
-        average=new double[size];
+        average = new double[size];
     }
 
-    public double getAverage(double av) {
+    public double setAverage(double av) {
 
-        average[0]=this.av;
-        average[index]=av;
+        average[0] = this.av;
+        average[index] = av;
         index++;
-        if(index>=size){index=1;}
+        if (index >= size) {
+            index = 1;
+        }
         for (int i = 0; i < average.length; i++) {
             av = av + average[i];
-            
-        }
-        av=av/size;
 
-        return av;
+        }
+        this.av = av / size;
+
+        return this.av;
+    }
+
+    public double getAverage() {
+        
+        return Precision.round(this.av,3);
     }
 
 }

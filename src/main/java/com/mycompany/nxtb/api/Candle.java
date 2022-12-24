@@ -36,12 +36,13 @@ public class Candle extends RateInfoRecord {
             }
         }
 
-        return Precision.round(super.getOpen() / mnoznik,5);
+        //return Precision.round(super.getOpen() / mnoznik,5);
+        return 0;
     }
 
     @Override
     public double getClose() {
-        return Precision.round((super.getClose() + (getOpen() * mnoznik)) / mnoznik,5);
+        return (super.getClose() + (getOpen() * mnoznik)) / mnoznik;
     }
 
     @Override
@@ -69,19 +70,22 @@ public class Candle extends RateInfoRecord {
     }
 
     public String getCloseString() {
-        return String.valueOf(this.getClose());
+        return String.valueOf(Precision.round(this.getClose()*100,1));
     }
 
     public String getOpenString() {
+        
+        
+        
         return String.valueOf(getOpen());
     }
 
     public String getHighString() {
-        return String.valueOf(getHigh());
+        return String.valueOf(Precision.round(getHigh()*100,1));
     }
 
     public String getLowString() {
-        return String.valueOf(getLow());
+        return String.valueOf(Precision.round(getLow()*100,1));
     }
 
     public String getVolString() {
@@ -90,11 +94,11 @@ public class Candle extends RateInfoRecord {
 
     public double getPipsCO() {
         
-        return Precision.round(this.getClose() - getOpen(),5);
+        return Precision.round(this.getClose() - getOpen(),5)*10;
     }
 
     public double getPipsHL() {
-        return Precision.round(getHigh() - getLow(),5); 
+        return Precision.round(getHigh() - getLow(),5)*10; 
     }
 
     public String getPipsCoString() {

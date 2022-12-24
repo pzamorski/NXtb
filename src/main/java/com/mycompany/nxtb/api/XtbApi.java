@@ -4,16 +4,21 @@
  */
 package com.mycompany.nxtb.api;
 
+import com.mycompany.nxtb.neuron.CreateModel;
+import com.mycompany.nxtb.stockMarketTools.RSI;
 import com.mycompany.nxtb.tools.Memory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.util.Precision;
+import org.neuroph.core.NeuralNetwork;
 import pro.xstore.api.message.codes.PERIOD_CODE;
 import pro.xstore.api.message.codes.TRADE_OPERATION_CODE;
 import pro.xstore.api.message.codes.TRADE_TRANSACTION_TYPE;
@@ -46,18 +51,23 @@ public class XtbApi {
     private static final String DATA_V = "V.txt";
     private static final String DATA_POC = "POC.txt";
     private static final String DATA_PHL = "PHL.txt";
+    private static final String DATA_RSI = "RSI.txt";
     private static final String DATA = ".txt";
 
     private static final String DATA_CHART = ".csv";
 
-    private final long id = 13983586;
-    private final String password = "i8V.@*%R3RPr46y";
+    private final long id = 14106453;
+    private final String password = "Mojehaslo2";
+    private final String separator = ",";
+
     private final SyncAPIConnector connector;
     private LoginResponse loginResponse;
-    private String lastSymbol;
     private String mySymbol = null;
-    private String pathSaveBuilder = null;
-    private String separator = ",";
+
+    double oldPrice = 0;
+    double oldPOC = 0;
+    double outNetworkZero = 0;
+    double outNetworkOne = 1;
 
     ArrayOrders orders = new ArrayOrders();
 
@@ -79,75 +89,20 @@ public class XtbApi {
         System.out.println("Logout");
     }
 
-    private boolean checkIsLogin() {
-        boolean loginResponseStatus = false;
-        if (loginResponse != null) {
-            loginResponseStatus = loginResponse.getStatus();
-        }
-        return loginResponseStatus;
-    }
-
-    private boolean checkConditionSymbol() {
-        return mySymbol != null;
-    }
-
     public void setMySymbol(String mySymbol) {
         this.mySymbol = mySymbol;
     }
 
-    public String buildPathFile(String type) {
-        StringBuilder returnPathFile = null;
-        if (checkConditionSymbol()) {
-            returnPathFile = new StringBuilder("data/" + mySymbol + "/" + mySymbol);
-            switch (type) {
-                case DATA_O:
-                    returnPathFile.append(type);
-                    break;
-                case DATA_C:
-                    returnPathFile.append(type);
-                    break;
-                case DATA_H:
-                    returnPathFile.append(type);
-                    break;
-                case DATA_L:
-                    returnPathFile.append(type);
-                    break;
-                case DATA_V:
-                    returnPathFile.append(type);
-                    break;
-                case DATA_POC:
-                    returnPathFile.append(type);
-                    break;
-                case DATA_PHL:
-                    returnPathFile.append(type);
-                    break;
-                case DATA:
-                    returnPathFile.append(type);
-                    break;
-                case DATA_CHART:
-                    returnPathFile = new StringBuilder("data/csv/" + mySymbol);
-                    returnPathFile.append(type);
-                    break;
-            }
-        }
-        return returnPathFile.toString();
-    }
+    public void getCandlesDataToFile(String symbol, PERIOD_CODE period_code, long time) throws Exception {
 
-    public void getSymbolData(PERIOD_CODE period_code, long time) {
+        setMySymbol(symbol);
 
         try {
 
             if (checkIsLogin() && checkConditionSymbol()) {
                 System.out.print("...");
 
-                FileWriter myWriterO = null,
-                        myWriterC = null,
-                        myWriterH = null,
-                        myWriterL = null,
-                        myWriterV = null,
-                        myWriterPOC = null,
-                        myWriterPHL = null,
-                        myWriter = null;
+                FileWriter myWriter = null;
 
                 ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, mySymbol, period_code, time);
                 List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
@@ -157,46 +112,63 @@ public class XtbApi {
                     if (!dataDir.exists()) {
                         dataDir.mkdirs();
                     }
-
-                    myWriterO = new FileWriter(buildPathFile(DATA_O));
-                    myWriterC = new FileWriter(buildPathFile(DATA_C));
-                    myWriterH = new FileWriter(buildPathFile(DATA_H));
-                    myWriterL = new FileWriter(buildPathFile(DATA_L));
-                    myWriterV = new FileWriter(buildPathFile(DATA_V));
-                    myWriterPOC = new FileWriter(buildPathFile(DATA_POC));
-                    myWriterPHL = new FileWriter(buildPathFile(DATA_PHL));
-
+                    ;
                     myWriter = new FileWriter(buildPathFile(DATA));
 
-                    System.out.print(mySymbol + " - zapis ");
-
-                    System.out.print("...");
+                    System.out.print(mySymbol + " - zapis ... ");
 
                     int sizeDownload = 0;
-                    
-                    for (int i = sizeDownload; i < rateInfoRecord.size()-1; i++) {
+
+                    String outCandle = null;
+                    for (int i = rateInfoRecord.size() - 100; i < rateInfoRecord.size() - 20; i++) {
 
                         Candle candle = new Candle(rateInfoRecord.get(i));
-                        Candle candleNext = new Candle(rateInfoRecord.get(i + 1));
+                        Candle candleNext1 = new Candle(rateInfoRecord.get(i + 1));
+                        Candle candleNext2 = new Candle(rateInfoRecord.get(i + 2));
+                        Candle candleNext3 = new Candle(rateInfoRecord.get(i + 3));
+                        Candle candleNext4 = new Candle(rateInfoRecord.get(i + 4));
+                        Candle candleNext5 = new Candle(rateInfoRecord.get(i + 5));
 
+                        if (candleNext5.getClose() > 0) {
+                            outCandle = "1";
+                        } else {
+                            outCandle = "0";
+                        }
+
+//                        Candle candleNext6 = new Candle(rateInfoRecord.get(i + 6));
                         try {
-                            myWriterO.write(candle.getOpenString() + separator);//dla ciagow czasowych
-                            myWriterC.write(candle.getCloseString() + separator);
-                            myWriterH.write(candle.getHighString() + separator);
-                            myWriterL.write(candle.getLowString() + separator);
-                            myWriterV.write(candle.getVolString() + separator);
-                            myWriterPOC.write(candle.getPipsCoString() + separator);
-                            myWriterPHL.write(candle.getPipsHlString() + separator);
-
                             myWriter.write(
-                                    candle.getOpenString() + separator
-                                    + candle.getCloseString() + separator
+                                    //                                    candle.getOpenString() + separator
+                                    //                                    + candle.getCloseString() + separator
+                                    //                                    + candle.getHighString() + separator
+                                    //                                    + candle.getLowString() + separator
+                                    //                                            //--------------------
+                                    //                                    +candleNext1.getOpenString() + separator
+                                    //                                    + candleNext1.getCloseString() + separator
+                                    //                                    + candleNext1.getHighString() + separator
+                                    //                                    + candleNext1.getLowString() + separator
+                                    //                                            
+                                    //                                    //                                    + candle.getVolString() + separator
+                                    //                                    //                                    + candle.getPipsCoString() + separator
+                                    //                                    //                                    + candle.getPipsHlString() + separator
+                                    //                                    + candleNext2.getCloseString() + separator
+                                    candle.getCloseString() + separator
                                     + candle.getHighString() + separator
                                     + candle.getLowString() + separator
-//                                    + candle.getVolString() + separator
-//                                    + candle.getPipsCoString() + separator
-//                                    + candle.getPipsHlString() + separator
-                                    + candleNext.getCloseString() + separator
+                                    + candleNext1.getCloseString() + separator
+                                    + candleNext1.getHighString() + separator
+                                    + candleNext1.getLowString() + separator
+                                    + candleNext2.getCloseString() + separator
+                                    + candleNext2.getHighString() + separator
+                                    + candleNext2.getLowString() + separator
+                                    + candleNext3.getCloseString() + separator
+                                    + candleNext3.getHighString() + separator
+                                    + candleNext3.getLowString() + separator
+                                    + candleNext4.getCloseString() + separator
+                                    + candleNext4.getHighString() + separator
+                                    + candleNext4.getLowString() + separator
+                                    //+ String.valueOf(new RSI().calculate(rateInfoRecord, i)) + separator
+                                    + outCandle + separator
                                     + System.lineSeparator());
 
                         } catch (IOException e) {
@@ -205,109 +177,158 @@ public class XtbApi {
                         }
 
                     }
-                    myWriterO.close();
-                    myWriterC.close();
-                    myWriterH.close();
-                    myWriterL.close();
-                    myWriterV.close();
-                    myWriterPOC.close();
-                    myWriterPHL.close();
                     myWriter.close();
-                    System.out.println(" OK" + "[" + (rateInfoRecord.size()-sizeDownload) + "]");
+                    System.out.println(" OK" + "[" + (rateInfoRecord.size() - sizeDownload) + "]");
+
+                    try {
+                    } catch (Exception ex) {
+                        Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
 
             } else {
                 System.err.println("Error: user couldn't log in!");
             }
+
         } catch (UnknownHostException e) {
         } catch (IOException | APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
         }
     }
 
-    public void getSymbolDataWithFindSymbol(PERIOD_CODE period_code, long time) {
+    public void createFile(String symbol, int sizeDownload, int offset, PERIOD_CODE period_code, long time, int input, int output) {
 
+        //CreateModel cm = new CreateModel(symbol, input, output);
+        File dataDir = new File("data/" + mySymbol);
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
+        }
+        FileWriter myWriter = null;
         try {
+            myWriter = new FileWriter("data/" + symbol + "/" + symbol + "_" + period_code + ".csv");
+        } catch (IOException ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
-            if (checkIsLogin() && checkConditionSymbol()) {
-                AllSymbolsResponse availableSymbols = APICommandFactory.executeAllSymbolsCommand(connector);
-                System.out.print("...");
+        //NeuralNetwork neuralNetwork = new CreateModel().loadModel(symbol);
+        setMySymbol(symbol);
+        int outSaveOK = 0;
 
-                FileWriter myWriterO = null,
-                        myWriterC = null,
-                        myWriterH = null,
-                        myWriterL = null,
-                        myWriterV = null,
-                        myWriter = null;
 
-                for (SymbolRecord symbol : availableSymbols.getSymbolRecords()) {
-                    ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, symbol.getSymbol(), period_code, time);
-                    List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
-                    if (!rateInfoRecord.isEmpty() && symbol.getSymbol().contains(mySymbol)) {
+        
+        long currentTime=new Date().getTime();
+        long timeStart=new Date(currentTime - time).getTime();
+long difTime=new Date(time).getTime();
 
-                        File dataDir = new File("data/" + mySymbol);
-                        if (!dataDir.exists()) {
-                            dataDir.mkdirs();
-                        }
+        
 
-                        myWriterO = new FileWriter(buildPathFile(DATA_O));
-                        myWriterC = new FileWriter(buildPathFile(DATA_C));
-                        myWriterH = new FileWriter(buildPathFile(DATA_H));
-                        myWriterL = new FileWriter(buildPathFile(DATA_L));
-                        myWriterV = new FileWriter(buildPathFile(DATA_V));
-                        myWriter = new FileWriter(buildPathFile(DATA));
+        for (int m = 0; outSaveOK <= sizeDownload || m < 100; m++) {
+             
+            
+            
+            
+            try {
 
-                        System.out.print(symbol.getSymbol() + " - zapis ");
+                if (checkIsLogin()) {
 
+                    //ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, mySymbol, period_code, time);
+                   
+                    ChartResponse chartResponse = APICommandFactory.executeChartRangeCommand(connector, symbol, period_code, timeStart, currentTime, id);
+                    List<RateInfoRecord> rateInfoRecord = chartResponse.getRateInfos();
+
+                        
+                    if (!rateInfoRecord.isEmpty()) {
+                        
+                        
+                        
                         System.out.print("...");
 
-                        for (int i = 0; i < rateInfoRecord.size() - 1; i++) {
 
-                            Candle candle = new Candle(rateInfoRecord.get(i));
-                            Candle candleNext = new Candle(rateInfoRecord.get(i + 1));
+                        int numberOfInputCandle = input / 3;
+                        int numberOfOutputCandle = 1;
+                        String outCandle = null;
 
-                            try {
-                                myWriterO.write(candle.getOpenString() + separator);//dla ciagow czasowych
-                                myWriterC.write(candle.getCloseString() + separator);
-                                myWriterH.write(candle.getHighString() + separator);
-                                myWriterL.write(candle.getLowString() + separator);
-                                myWriterV.write(candle.getVolString() + separator);
+                        for (int i = 0; i < rateInfoRecord.size() - offset; i = i + offset) {
 
-                                myWriter.write(candle.getOpenString() + separator
-                                        + //wejsca
-                                        candle.getCloseString() + separator
-                                        + candle.getHighString() + separator
-                                        + candle.getLowString() + separator
-                                        + candleNext.getOpenString() + separator
-                                        + //wejsca
-                                        candleNext.getCloseString() + separator
-                                        + candleNext.getHighString() + separator
-                                        + candleNext.getLowString() + separator
+                            double[] dataIN = new double[input];
+                            double[] dataOut = new double[output];
 
-                                        // + candleNext.getCloseString() + separator
-                                        +//wyjscie
-                                        System.lineSeparator());
+                            Candle[] candlesInput = new Candle[numberOfInputCandle];
+                            Candle[] candlesOutput = new Candle[numberOfOutputCandle];
 
-                            } catch (IOException e) {
-                                System.out.println("error");
-                                e.printStackTrace();
+                            int j;
+                            for (j = 0; j < candlesInput.length; j++) {
+                                candlesInput[j] = new Candle(rateInfoRecord.get(i + j));
                             }
 
-                        }
+                            for (int k = j + 1, index = 0; index < candlesOutput.length; k++, index++) {
+                                candlesOutput[index] = new Candle(rateInfoRecord.get(i + k - 1));
+                            }
 
-                        myWriterO.close();
-                        myWriterC.close();
-                        myWriterH.close();
-                        myWriterL.close();
-                        myWriterV.close();
-                        myWriter.close();
-                        System.out.println(" OK" + "[" + rateInfoRecord.size() + "]");
+                            //Candle candleNext5 = new Candle(rateInfoRecord.get(i + 5));
+                            for (int k = 0, l = 0; k < dataIN.length; k = k + 3) {
+                                dataIN[k] = candlesInput[l].getClose();
+                                dataIN[k + 1] = candlesInput[l].getHigh();
+                                dataIN[k + 2] = candlesInput[l].getLow();
+                                l++;
+                            }
+
+                            if (candlesOutput[0].getClose() > 0) {
+                                dataOut[0] = 1;
+                            }
+                            if (candlesOutput[0].getClose() < 0) {
+                                dataOut[0] = 0;
+                            }
+                            if (candlesOutput[0].getClose() == 0) {
+                                dataOut[0] = 0.5;
+                            }
+
+                            //cm.addData(dataIN, dataOut);
+                            String dataToFile = Arrays.toString(dataIN) + separator + Arrays.toString(dataOut) + System.lineSeparator();
+                            dataToFile = dataToFile.replace("[", "").replace("]", "").replace(" ", "").replace(",", ";");
+                            try {
+                                myWriter.write(dataToFile);
+                                outSaveOK++;
+                            } catch (IOException ex) {
+                                Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            
+
+                        }
+                        //cm.lern();
+                        System.out.println(" Download size:" + "[" + outSaveOK + "]/[" + sizeDownload + "] "
+                                + new Date(timeStart) + " " + new Date(currentTime)
+                        );
+                         currentTime=new Date(currentTime-((currentTime-difTime)/10)).getTime();
+                         timeStart=new Date(timeStart-(difTime/10)).getTime();
+
+                        try {
+                        } catch (Exception ex) {
+                            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    } else {
+                        System.err.println("Empty response.");
                     }
+                    
+
+                } else {
+                    System.err.println("Error: user couldn't log in!");
                 }
-            } else {
-                System.err.println("Error: user couldn't log in!");
+
+            } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
             }
-        } catch (UnknownHostException e) {
-        } catch (IOException | APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
+
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+
+        try {
+            myWriter.close();
+        } catch (IOException ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
@@ -329,34 +350,31 @@ public class XtbApi {
         return symbolRecord;
     }
 
-    public void TradeTransaction(double priceFromNetwork, String coment) throws IOException {
+    public void TradeTransactionV3(double POC, String coment) throws IOException {
 
-        Order oreder = orders.get(mySymbol);
+        Order order = orders.get(mySymbol);
 
-        priceFromNetwork = Precision.round(priceFromNetwork, 3);
-
-        double curentProfit = oreder.getProfit();
-        double tolerance = oreder.getTolerance();
-        int limitZleceń = oreder.geLimitOrders();
+        double tolerance = order.getTolerance();
+        order.setCurrentPOC(POC);
 
         TradeTransInfoRecord ttOpenInfoRecord = null;
         SymbolRecord symbolRecord = getSymbolRecord(mySymbol);
 
         double actualPrice = symbolRecord.getBid();
-        double priceCondition = priceFromNetwork - actualPrice;
+        double priceFromNetwork = POC + symbolRecord.getBid();
 
-        new Memory().saveCSV(buildPathFile(DATA_CHART), priceFromNetwork, actualPrice, coment);
+        double priceCondition = (priceFromNetwork) - actualPrice;
 
-        System.out.println("Przewidywana cena: " + priceFromNetwork + " Aktualna cena: " + actualPrice);
+        new Memory().saveCSV(buildPathFile(DATA_CHART), POC + actualPrice, actualPrice, coment);
 
-        if (Math.abs(priceCondition) > tolerance) {
-            if (priceFromNetwork > actualPrice) {
-                System.out.println("KUP");
-                //ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN,oreder.getVolume());
+        System.out.println("[" + mySymbol + "] OUT: " + POC + " Aktualna cena: " + actualPrice);
+        //if (Math.abs(priceCondition) > tolerance) {
+        if (true) {
+            if (POC > 0.7) {
+                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN, order.getVolume());
             }
-            if (priceFromNetwork < actualPrice) {
-                System.out.println("SEll");
-                //ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.SELL, TRADE_TRANSACTION_TYPE.OPEN,oreder.getVolume());
+            if (POC < 0.4) {
+                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.SELL, TRADE_TRANSACTION_TYPE.OPEN, order.getVolume());
             }
         } else {
             System.out.println("Tolerancja przekroczona");
@@ -374,17 +392,26 @@ public class XtbApi {
                     int iloscZlecenDlaSymbolu = 0;
                     for (int i = 0; i < listTradesResponse.size(); i++) {//Sprawdza ilosc aktualnych zlecen
                         TradeRecord tradeRecord = listTradesResponse.get(i);
+
+                        System.out.println(tradeRecord.getVolume());
                         if (tradeRecord.getSymbol().equals(mySymbol)) {
                             iloscZlecenDlaSymbolu++;
                         }
                     }
 
-                    if (iloscZlecenDlaSymbolu <= oreder.geLimitOrders()) {//nie wiecej jak limitZleceń 
+                    if (iloscZlecenDlaSymbolu <= order.geLimitOrders()) {//nie wiecej jak limitZleceń 
+
                         if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.BUY) {
                             System.out.print("Buying " + mySymbol + " ");
+                            order.setOpenPozytionPOC(1);
+
+                        }
+                        if (ttOpenInfoRecord.getCmd() == TRADE_OPERATION_CODE.SELL) {
+                            System.out.print("Selling " + mySymbol + " ");
+                            order.setOpenPozytionPOC(0);
                         }
 
-                        tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);//kup
+                        tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);//otworz pozycje
 
                         System.out.println("[" + tradeTransactionResponse.getOrder() + "]");
 
@@ -400,9 +427,13 @@ public class XtbApi {
 
     }
 
-    public void StartMonitProfit() {
+    public void StartMonitProfitV3() {
 
         while (true) {
+            //System.out.println("Start thred monit profit");
+            Order order = orders.get(mySymbol);
+
+            //if(order.getOpenPozytionPOC()==0){order.setOpenPozytionPOC(order.getCurrentPOC());}
             TradeTransInfoRecord ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.CLOSE);
             boolean loginStatus = loginResponse.getStatus();
             try {
@@ -417,21 +448,20 @@ public class XtbApi {
                         for (int i = 0; i < listTradesResponse.size(); i++) {
                             TradeRecord record = listTradesResponse.get(i);
 
-                            // if (record.getProfit() > orders.get(mySymbol).getProfit()) {
-                            if (record.getProfit() > 400) {
-                                orders.get(mySymbol).addProfir(record.getProfit());
+                            // if ( orders.get(mySymbol).getProfit()) {
+                            if (((order.getOpenPozytionPOC() == 0 && order.getCurrentPOC() > 0.5) || (order.getOpenPozytionPOC() == 1 && order.getCurrentPOC() < 0.9)) && record.getProfit() > 0) {
 
                                 ttOpenInfoRecord.setOrder(record.getOrder());
                                 ttOpenInfoRecord.setVolume(record.getVolume());
 
                                 for (int j = 0; j < 10; j++) {
                                     tradeTransactionResponse = APICommandFactory.executeTradeTransactionCommand(connector, ttOpenInfoRecord);
-                                    ;
+
                                     System.out.println("");
-                                    System.out.println("Nazwa: " + ttOpenInfoRecord.getSymbol() + " Status: " + tradeTransactionResponse.getStatus() + " Profit: " + orders.get(mySymbol).getProfit());
+                                    System.out.println("Nazwa: " + ttOpenInfoRecord.getSymbol() + " Status: " + tradeTransactionResponse.getStatus() + " Profit: " + order.getProfit());
 
                                     try {
-                                        Thread.sleep(900);
+                                        Thread.sleep(3000);
                                     } catch (InterruptedException ex) {
                                         Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
                                     }
@@ -465,12 +495,162 @@ public class XtbApi {
 
     public Thread StartMonitProfitInThred() {
         Thread monitProfitInThred = new Thread(() -> {
-            StartMonitProfit();
+            StartMonitProfitV3();
 
         });
-        System.out.println("Start thred monit profit");
+
         monitProfitInThred.start();
         return monitProfitInThred;
+    }
+
+    public long getServerTime() {
+        ServerTimeResponse serverTime = null;
+        try {
+            serverTime = APICommandFactory.executeServerTimeCommand(connector);
+        } catch (APICommandConstructionException ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (APICommunicationException ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (APIReplyParseException ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (APIErrorResponse ex) {
+            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return serverTime.getTime();
+    }
+
+    public void insertParaOrders(ArrayOrders orders) {
+        this.orders = orders;
+    }
+
+    public double[] getLastCandles(PERIOD_CODE period_code, long time, int input) throws Exception {
+
+        double[] returnDataToInputNeuron = new double[input];
+        int numberOFCandle = input / 3;
+        int setOneBackCandle = numberOFCandle;
+        try {
+
+            if (checkIsLogin() && checkConditionSymbol()) {
+                ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, mySymbol, period_code, time);
+                List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
+                Candle candle;
+                if (!rateInfoRecord.isEmpty()) {
+
+                    for (int i = 0; i < returnDataToInputNeuron.length; i = i + 3) {
+                        candle = new Candle(rateInfoRecord.get(rateInfoRecord.size() - setOneBackCandle));
+                        returnDataToInputNeuron[i] = candle.getClose();
+                        returnDataToInputNeuron[i + 1] = candle.getHigh();
+                        returnDataToInputNeuron[i + 2] = candle.getLow();
+
+//                        returnDataToInputNeuron[i] = Precision.round(candle.getClose() * 100, 1);
+//                        returnDataToInputNeuron[i + 1] = Precision.round(candle.getHigh() * 100, 1);
+//                        returnDataToInputNeuron[i + 2] = Precision.round(candle.getLow() * 100, 1);
+                        setOneBackCandle--;
+
+                    }
+
+                }
+
+            } else {
+                System.err.println("Error: user couldn't log in!");
+            }
+
+        } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
+        }
+
+        return returnDataToInputNeuron;
+    }
+
+    public double[] getLastCandlesWithCurrentCandle(PERIOD_CODE period_code, long time) throws Exception {
+
+        double[] returnDataToInputNeuron = new double[15];
+
+        try {
+
+            if (checkIsLogin() && checkConditionSymbol()) {
+                ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, mySymbol, period_code, time);
+                List<RateInfoRecord> rateInfoRecord = chartLastCommand.getRateInfos();
+                Candle candle;
+                if (!rateInfoRecord.isEmpty()) {
+
+                    candle = new Candle(rateInfoRecord.get(rateInfoRecord.size() - 5));
+                    returnDataToInputNeuron[0] = candle.getClose();
+                    returnDataToInputNeuron[1] = candle.getHigh();
+                    returnDataToInputNeuron[2] = candle.getLow();
+
+                    candle = new Candle(rateInfoRecord.get(rateInfoRecord.size() - 4));
+                    returnDataToInputNeuron[3] = candle.getClose();
+                    returnDataToInputNeuron[4] = candle.getHigh();
+                    returnDataToInputNeuron[5] = candle.getLow();
+
+                    candle = new Candle(rateInfoRecord.get(rateInfoRecord.size() - 3));
+                    returnDataToInputNeuron[6] = candle.getClose();
+                    returnDataToInputNeuron[7] = candle.getHigh();
+                    returnDataToInputNeuron[8] = candle.getLow();
+
+                    candle = new Candle(rateInfoRecord.get(rateInfoRecord.size() - 2));
+                    returnDataToInputNeuron[9] = candle.getClose();
+                    returnDataToInputNeuron[10] = candle.getHigh();
+                    returnDataToInputNeuron[11] = candle.getLow();
+
+                    candle = new Candle(rateInfoRecord.get(rateInfoRecord.size() - 1));
+                    returnDataToInputNeuron[12] = candle.getClose();
+                    returnDataToInputNeuron[13] = candle.getHigh();
+                    returnDataToInputNeuron[14] = candle.getLow();
+
+                    //returnDataToInputNeuron[15] = new RSI().calculate(rateInfoRecord, rateInfoRecord.size() - 1);
+                    System.out.println(" OK" + "[" + rateInfoRecord.size() + "]");
+                }
+
+            } else {
+                System.err.println("Error: user couldn't log in!");
+            }
+
+        } catch (APICommandConstructionException | APICommunicationException | APIReplyParseException | APIErrorResponse e) {
+        }
+
+        return returnDataToInputNeuron;
+    }
+
+    private String buildPathFile(String type) {
+        StringBuilder returnPathFile = null;
+        if (checkConditionSymbol()) {
+            returnPathFile = new StringBuilder("data/" + mySymbol + "/" + mySymbol);
+            switch (type) {
+                case DATA_O:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_C:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_H:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_L:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_V:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_POC:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_PHL:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_RSI:
+                    returnPathFile.append(type);
+                    break;
+                case DATA:
+                    returnPathFile.append(type);
+                    break;
+                case DATA_CHART:
+                    returnPathFile = new StringBuilder("data/csv/" + mySymbol);
+                    returnPathFile.append(type);
+                    break;
+            }
+        }
+        return returnPathFile.toString();
     }
 
     private TradeTransInfoRecord CreateTradeTransInfoRecord(TRADE_OPERATION_CODE tradeOperattionCode, TRADE_TRANSACTION_TYPE trade_transaction_type) {
@@ -510,8 +690,6 @@ public class XtbApi {
         String customComment = "NXtb";
         long expiration = 0;
 
-
-
         TradeTransInfoRecord ttOpenInfoRecord = new TradeTransInfoRecord(
                 tradeOperattionCode,
                 trade_transaction_type,
@@ -529,49 +707,16 @@ public class XtbApi {
 
     }
 
-    public long getServerTime() {
-        ServerTimeResponse serverTime = null;
-        try {
-            serverTime = APICommandFactory.executeServerTimeCommand(connector);
-        } catch (APICommandConstructionException ex) {
-            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (APICommunicationException ex) {
-            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (APIReplyParseException ex) {
-            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (APIErrorResponse ex) {
-            Logger.getLogger(XtbApi.class.getName()).log(Level.SEVERE, null, ex);
+    private boolean checkIsLogin() {
+        boolean loginResponseStatus = false;
+        if (loginResponse != null) {
+            loginResponseStatus = loginResponse.getStatus();
         }
-        return serverTime.getTime();
+        return loginResponseStatus;
     }
 
-    public void checkBuyCondition(double priceFromNetwork, SymbolRecord symbolRecord) {
-
-        double curentProfit = orders.get(mySymbol).getProfit();
-        double tolerance = orders.get(mySymbol).getTolerance();
-        double actualPrice = symbolRecord.getBid();
-        double priceCondition = priceFromNetwork - actualPrice;
-
-        int limitZleceń = orders.get(mySymbol).geLimitOrders();
-
-        TradeTransInfoRecord ttOpenInfoRecord = null;
-
-        if (Math.abs(priceCondition) > tolerance) {
-            if (priceFromNetwork > actualPrice) {
-                ttOpenInfoRecord = CreateTradeTransInfoRecord(TRADE_OPERATION_CODE.BUY, TRADE_TRANSACTION_TYPE.OPEN);
-            }
-        } else {
-            System.out.println("Tolerancja przekroczona");
-        }
-
-    }
-
-    public void buy(double priceFromNetwork) {
-
-    }
-
-    public void insertParaOrders(ArrayOrders orders) {
-        this.orders = orders;
+    private boolean checkConditionSymbol() {
+        return mySymbol != null;
     }
 
 }
