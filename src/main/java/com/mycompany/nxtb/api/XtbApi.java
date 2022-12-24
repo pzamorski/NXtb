@@ -57,7 +57,7 @@ public class XtbApi {
     private static final String DATA_CHART = ".csv";
 
     private final long id = 14106453;
-    private final String password = "Mojehaslo2";
+    private final String password = "";
     private final String separator = ",";
 
     private final SyncAPIConnector connector;
