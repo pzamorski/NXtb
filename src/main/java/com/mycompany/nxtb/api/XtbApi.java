@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.util.Precision;
@@ -57,7 +58,7 @@ public class XtbApi {
     private static final String DATA_CHART = ".csv";
 
     private final long id = 14106453;
-    private final String password = "";
+    private final String password = "Mojehaslo2";
     private final String separator = ",";
 
     private final SyncAPIConnector connector;
@@ -215,24 +216,24 @@ public class XtbApi {
 
 
         
-        long currentTime=new Date().getTime();
-        long timeStart=new Date(currentTime - time).getTime();
-long difTime=new Date(time).getTime();
+        long timeStop=System.currentTimeMillis();
+        long timeStart=System.currentTimeMillis() - time;
+        //long difTime=time;
 
         
 
-        for (int m = 0; outSaveOK <= sizeDownload || m < 100; m++) {
-             
+        
+          
             
             
-            
+     for (int m = 0; outSaveOK <= sizeDownload || m > 10; m++) {  
             try {
-
+if(m>20){break;}
                 if (checkIsLogin()) {
 
                     //ChartResponse chartLastCommand = APICommandFactory.executeChartLastCommand(connector, mySymbol, period_code, time);
                    
-                    ChartResponse chartResponse = APICommandFactory.executeChartRangeCommand(connector, symbol, period_code, timeStart, currentTime, id);
+                    ChartResponse chartResponse = APICommandFactory.executeChartRangeCommand(connector, symbol, period_code, timeStart, timeStop, id);
                     List<RateInfoRecord> rateInfoRecord = chartResponse.getRateInfos();
 
                         
@@ -246,9 +247,10 @@ long difTime=new Date(time).getTime();
                         int numberOfInputCandle = input / 3;
                         int numberOfOutputCandle = 1;
                         String outCandle = null;
-
+                        
+                        int itemDownload=0;
                         for (int i = 0; i < rateInfoRecord.size() - offset; i = i + offset) {
-
+                            itemDownload++;
                             double[] dataIN = new double[input];
                             double[] dataOut = new double[output];
 
@@ -296,10 +298,13 @@ long difTime=new Date(time).getTime();
                         }
                         //cm.lern();
                         System.out.println(" Download size:" + "[" + outSaveOK + "]/[" + sizeDownload + "] "
-                                + new Date(timeStart) + " " + new Date(currentTime)
+                                + new Date(timeStart) + " " +new Date( timeStop)
                         );
-                         currentTime=new Date(currentTime-((currentTime-difTime)/10)).getTime();
-                         timeStart=new Date(timeStart-(difTime/10)).getTime();
+//                         currentTime=new Date(currentTime-((currentTime-difTime)/10)).getTime();
+//                         timeStart=new Date(currentTime-(difTime/10)).getTime();
+                         timeStop=timeStart;
+                         timeStart=timeStart-TimeUnit.DAYS.toMillis(2);
+                        //System.out.println(time);
 
                         try {
                         } catch (Exception ex) {

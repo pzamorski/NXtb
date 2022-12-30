@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.neuroph.core.NeuralNetwork;
@@ -46,6 +47,7 @@ public class CreateModel {
     private double minError = 9999;
     private PERIOD_CODE period_code;
     
+    
 
     private NeuralNetwork neuralNetwork;
 
@@ -65,11 +67,17 @@ public class CreateModel {
         neuralNetwork = new CreateModel().loadModel(symbol);
     }
 
+    public int getInput() {
+        return input;
+    }
+
+    public int getOutput() {
+        return output;
+    }
+
 
 
     public void addData(double[] in, double[] out) {
-        // Tworzymy zbiór danych zawierający przykłady wejściowe i odpowiadające im etykiety
-        // 2 wejścia, 1 wyjście
         dataSet.add(new DataSetRow(in, out));
         createFolder(pathOfData);
         dataSet.save(pathOfData + "/" + nameModel + ".dat");
@@ -82,13 +90,15 @@ public class CreateModel {
     }
 
     public void lern() {
+      
+        
         System.out.println("Start lern");
         System.out.println("Rozmiar danych szkoleniowych: " + dataSet.size());
 
-        neuralNetwork = new MultiLayerPerceptron(TransferFunctionType.SIGMOID, input,input*2+5, output);
+        neuralNetwork = new MultiLayerPerceptron(TransferFunctionType.SIGMOID, input,input*2+5,input,2, output);
         DynamicBackPropagation dynamicBackPropagation = new DynamicBackPropagation();
         dynamicBackPropagation.setMinLearningRate(0.1);
-        dynamicBackPropagation.setMaxError(0.008);
+        dynamicBackPropagation.setMaxError(0.0001);
         neuralNetwork.setLearningRule(dynamicBackPropagation);
         neuralNetwork.getLearningRule().addListener(new LerningListenerDynamicBackProbagation());
 
@@ -112,6 +122,9 @@ public class CreateModel {
             Logger.getLogger(CreateModel.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+   
+        
+        neuralNetwork.setWeights(new Memory().loadDouble(pathOfModels + "/" + nameModel + ".wg"));
         neuralNetwork.learn(trainingSet);
 
         System.out.println("Network performance on the test set");
@@ -146,11 +159,10 @@ public class CreateModel {
         NeuralNetwork nn = null;
         String path = pathOfModels + "/" + nameModel + ".lib";
         try {
-            
-            nn = NeuralNetwork.load(path);
-            nn.setWeights(new Memory().loadDouble(pathOfModels + "/" + nameModel + ".wg"));
-            System.out.println("Load " + pathOfModels + "/" + nameModel + ".lib");
+            //System.out.println("Load " + pathOfModels + "/" + nameModel + ".lib");
+            //nn = NeuralNetwork.load(path);
             System.out.println("Load " +pathOfModels + "/" + nameModel + ".wg");
+            nn.setWeights(new Memory().loadDouble(pathOfModels + "/" + nameModel + ".wg"));
         } catch (Exception e) {
         }
         return nn;
@@ -203,9 +215,10 @@ public void evaluate(NeuralNetwork neuralNet, DataSet dataSet) {
             int curentIteration = bp.getCurrentIteration();
             double Error = bp.getTotalNetworkError();
 
-            if (curentIteration % (dataSet.size()) == 0 || curentIteration == 1) {
-                if (Error < minError && (minError - Error) > 0.001) {
+            if (curentIteration % (1) == 0 || curentIteration == 1) {
+                if (Error < minError && (minError - Error) > 0.0001) {
                     minError = Error;
+                    System.out.print("Save model");
                     neuralNetwork.save(pathOfModels + "/" + nameModel + ".lib");
 
                     try {
@@ -222,7 +235,17 @@ public void evaluate(NeuralNetwork neuralNet, DataSet dataSet) {
                     Logger.getLogger(CreateModel.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
-                System.out.printf("E: %d/%d E: %.6f/%.6f M: %.0f/%.0f \n", curentIteration/dataSet.size(), bp.getMaxIterations()/dataSet.size(), bp.getTotalNetworkError(), bp.getMaxError(), bp.getMomentum() * 1.0E6, bp.getMaxMomentum() * 1.0E6);
+                System.out.printf("E: %d/%d"
+                        + " R: %.6f/%.6f "
+                        + "M: %.0f/%.0f "
+                        + "%tc \n", 
+                        curentIteration/dataSet.size(), 
+                        bp.getMaxIterations()/dataSet.size(),
+                        bp.getTotalNetworkError(), 
+                        bp.getMaxError(), 
+                        bp.getMomentum() * 1.0E6,
+                        bp.getMaxMomentum() * 1.0E6,
+                        new Date());
 
             }
         }

@@ -4,21 +4,12 @@
  */
 package com.mycompany.nxtb;
 
-import com.mycompany.nxtb.tools.TimeRange;
+import com.mycompany.nxtb.api.HistoricCandles;
 import com.mycompany.nxtb.api.XtbApi;
 import com.mycompany.nxtb.neuron.CreateModel;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Period;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.util.Precision;
@@ -38,99 +29,69 @@ public class NXtb {
 
     public static void main(String[] args) throws IOException, APICommandConstructionException, APICommunicationException, APIReplyParseException, APIErrorResponse, Exception {
 
-        boolean xtb = true;
-        boolean lernLocalData = false;
-        boolean start=false;
+        boolean xtb = false;
+        boolean lernLocalData = true;
+        boolean start = false;
 
         System.out.println("V:" + Neuroph.getVersion() + ".3.1");
-        
+
         PERIOD_CODE periodCode = PERIOD_CODE.PERIOD_M1;
-        long periodCodeInMiliSekund=periodCode.getCode()*60000;
         String symbol = null;
-        
+
         int numberCandleToInput = 5;
-        int sizeDownload = 40000;
-        long timeDownload=(periodCodeInMiliSekund*sizeDownload)+(numberCandleToInput*periodCodeInMiliSekund);
- 
+        int sizeDownload = 500;
+
         int inputNetwork = numberCandleToInput * 3;
         int outputNetwork = 1;
         double[] out = new double[outputNetwork];
         symbol = "USDJPY";
         double[] InsertDataToInputScaner = new double[inputNetwork];
 
-        
-        
-       
-        
-        
+        CreateModel cm = new CreateModel(symbol, inputNetwork, outputNetwork, periodCode);
+
         //Thread monitThread = xtbApi.StartMonitProfitInThred();
         if (xtb) {
-            XtbApi xtbApi = new XtbApi();
-            xtbApi.setMySymbol(symbol);
-            xtbApi.login();
-            
-            /////////////////////////////////////
-            xtbApi.createFile(
+            new HistoricCandles().get(
                     symbol,
                     sizeDownload,
                     numberCandleToInput,
                     periodCode,
-                    //new Date(new TimeRange().getRange(timeDownload)).getTime(),
-                    timeDownload,
-                    inputNetwork,
-                    outputNetwork);
-            xtbApi.logout();
+                    cm);
         }
-        
+
         NeuralNetwork neuralNetwork;
-        CreateModel cm = new CreateModel(symbol, inputNetwork, outputNetwork,periodCode);
-        
-        
 
-        if(lernLocalData){
-        cm.lernFromFile();
+        if (lernLocalData) {
+            
+            cm.lernFromFile();
+            
         }
-        
 
-        
-        if(start){
-             XtbApi xtbApi = new XtbApi();
+        if (start) {
+            XtbApi xtbApi = new XtbApi();
             xtbApi.setMySymbol(symbol);
             xtbApi.login();
-            
-            neuralNetwork=new CreateModel().loadModel(symbol);
-            
-        for (;;) {
 
-            if (59 - new Date(xtbApi.getServerTime()).getSeconds() == 59) {
-                double[] ret = xtbApi.getLastCandles(periodCode, new Date().getTime() - (numberCandleToInput * 60000), inputNetwork);//15000000 ofset dla minut
-                if (!Arrays.equals(ret, InsertDataToInputScaner)) {
+            neuralNetwork = new CreateModel().loadModel(symbol);
 
-                    InsertDataToInputScaner = ret;
-                    neuralNetwork.setInput(ret);
-                    neuralNetwork.calculate();
-                    out = neuralNetwork.getOutput();
-                    out[0] = Precision.round(out[0], 6);
-                    System.out.println(new Date(xtbApi.getServerTime()) + " out: " + out[0]);
+            for (;;) {
+
+                if (59 - new Date(xtbApi.getServerTime()).getSeconds() == 59) {
+                    double[] ret = xtbApi.getLastCandles(periodCode, new Date().getTime() - (numberCandleToInput * 60000), inputNetwork);//15000000 ofset dla minut
+                    if (!Arrays.equals(ret, InsertDataToInputScaner)) {
+
+                        InsertDataToInputScaner = ret;
+                        neuralNetwork.setInput(ret);
+                        neuralNetwork.calculate();
+                        out = neuralNetwork.getOutput();
+                        out[0] = Precision.round(out[0], 6);
+                        System.out.println(new Date(xtbApi.getServerTime()) + " out: " + out[0]);
+                    }
                 }
+
+                // Thread.sleep(1000);
             }
-
-            // Thread.sleep(1000);
-        }}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        }
 
 //        for (;;) {
 //
@@ -192,38 +153,28 @@ public class NXtb {
 //        }
     }
 
-    
-    
-  private static int calculateNumberOfDaysBetween(Date startDate, Date endDate) {
-    if (startDate.after(endDate)) {
-        throw new IllegalArgumentException("End date should be grater or equals to start date");
+    private static int calculateNumberOfDaysBetween(Date startDate, Date endDate) {
+        if (startDate.after(endDate)) {
+            throw new IllegalArgumentException("End date should be grater or equals to start date");
+        }
+
+        long startDateTime = startDate.getTime();
+        long endDateTime = endDate.getTime();
+        long milPerDay = 1000 * 60 * 60 * 24;
+
+        int freeDey = 0;
+
+        int numOfDays = (int) ((endDateTime - startDateTime) / milPerDay); // calculate vacation duration in days
+        System.out.println("numberOFDays " + numOfDays);
+        for (int i = 0; i < numOfDays; i++) {
+            if (numOfDays % 6 == 0 || numOfDays % 7 == 0) {
+                freeDey++;
+            }
+        }
+
+        return freeDey + 1; // add one day to include start date in interval
     }
 
-    long startDateTime = startDate.getTime();
-    long endDateTime = endDate.getTime();
-    long milPerDay = 1000*60*60*24; 
-    
-    int freeDey=0;
-
-    int numOfDays = (int) ((endDateTime - startDateTime) / milPerDay); // calculate vacation duration in days
-System.out.println("numberOFDays "+numOfDays);
-      for (int i = 0; i < numOfDays; i++) {
-          if(numOfDays%6==0||numOfDays%7==0){
-          freeDey++;
-          }
-      }
-    
-    return freeDey+1; // add one day to include start date in interval
-}
-    
-    
-    
-    
-    
-    
-    
-    
-    
     private static void Sleep(PERIOD_CODE period_code) {
         if (period_code == PERIOD_CODE.PERIOD_M1) {
             try {
@@ -274,7 +225,4 @@ System.out.println("numberOFDays "+numOfDays);
 
     }
 
-
-    
-    
 }
